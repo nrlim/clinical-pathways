@@ -1,0 +1,112 @@
+{
+  "case_title": "Negative Case 2: Tindakan Overutilisasi (DHF diberi Hemodialisis & EKG)",
+  "form_data": {
+    "patient": {
+      "patient_name": "Agus Setiawan",
+      "nik": "3171012345678000",
+      "birth_date": "1985-05-15",
+      "gender": "male",
+      "mr_number": "P012345600",
+      "address": "Jl. Sudirman No. 1, Jakarta",
+      "phone": "081234500000",
+      "guarantor": "Umum",
+      "bpjs_number": ""
+    },
+    "encounter": {
+      "encounter_class": "inpatient",
+      "admission_date": "2026-05-18",
+      "admission_time": "09:30",
+      "discharge_date": "",
+      "discharge_time": "",
+      "ward": "II",
+      "room_number": "Mawar-01",
+      "bed_number": "1",
+      "practitioner_name": "dr. Ahmad Fauzi, Sp.PD",
+      "dpjp_number": "3171000000001",
+      "referring_facility": "",
+      "expected_los": "4",
+      "organization_id": "org1"
+    },
+    "diagnosis": {
+      "primary_diagnosis_code": "A91",
+      "primary_diagnosis_name": "Dengue haemorrhagic fever",
+      "severity": "sedang",
+      "comorbidities": "",
+      "secondary_diagnoses": []
+    },
+    "procedures": [
+      {
+        "id": "proc-1",
+        "icd9_code": "90.59",
+        "name": "Examination of blood",
+        "category": "Diagnostik",
+        "performed_date": "2026-05-18",
+        "performed_by": "Laboratorium",
+        "conformance": "sesuai",
+        "unit_cost": "120000",
+        "quantity": "2",
+        "tariff_type": "Umum",
+        "notes": "Darah rutin (Sesuai)"
+      },
+      {
+        "id": "proc-2",
+        "icd9_code": "39.95",
+        "name": "Hemodialysis",
+        "category": "Terapi",
+        "performed_date": "2026-05-19",
+        "performed_by": "Unit HD",
+        "conformance": "tidak",
+        "unit_cost": "950000",
+        "quantity": "1",
+        "tariff_type": "Umum",
+        "notes": "Overutilisasi: DHF tanpa komplikasi AKI/Ginjal"
+      },
+      {
+        "id": "proc-3",
+        "icd9_code": "89.52",
+        "name": "Electrocardiogram",
+        "category": "Diagnostik",
+        "performed_date": "2026-05-18",
+        "performed_by": "Perawat",
+        "conformance": "tidak",
+        "unit_cost": "100000",
+        "quantity": "1",
+        "tariff_type": "Umum",
+        "notes": "Overutilisasi: Tidak ada indikasi jantung"
+      }
+    ],
+    "medications": [
+      {
+        "id": "med-1",
+        "drug_name": "Ringer Lactate",
+        "generic_name": "Ringer Lactate",
+        "route": "IV",
+        "dosage": "500ml",
+        "frequency": "12 jam",
+        "duration_days": "2",
+        "formulary": "Formularium Nasional",
+        "conformance": "sesuai",
+        "unit_cost": "12000",
+        "quantity": "4",
+        "notes": "Cairan (Sesuai)"
+      }
+    ],
+    "inpatient": {
+      "is_inpatient_indicated": true,
+      "justification_reason": "Trombosit turun",
+      "clinical_criteria_met": ["Memerlukan monitoring ketat 24 jam"],
+      "los_conformance": "sesuai",
+      "los_deviation_reason": "",
+      "discharge_criteria": "",
+      "discharge_condition": ""
+    },
+    "outcome": {
+      "outcome": "ongoing",
+      "readmission_risk": "rendah",
+      "clinical_notes": "Pasien stabil",
+      "follow_up_plan": "",
+      "education_given": "",
+      "pathway_variance": "Banyak tindakan overutilisasi."
+    }
+  }
+}

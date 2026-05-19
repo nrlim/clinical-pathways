@@ -1,0 +1,99 @@
+{
+  "case_title": "Negative Case 4: Harga Markup / Tidak Wajar",
+  "form_data": {
+    "patient": {
+      "patient_name": "Candra Wijaya",
+      "nik": "3171012345678002",
+      "birth_date": "1975-03-22",
+      "gender": "male",
+      "mr_number": "P012345602",
+      "address": "Jl. Kertanegara, Jakarta",
+      "phone": "081234500002",
+      "guarantor": "Asuransi Swasta",
+      "bpjs_number": ""
+    },
+    "encounter": {
+      "encounter_class": "inpatient",
+      "admission_date": "2026-05-18",
+      "admission_time": "11:00",
+      "discharge_date": "",
+      "discharge_time": "",
+      "ward": "VIP",
+      "room_number": "Anggrek-VIP",
+      "bed_number": "1",
+      "practitioner_name": "dr. Darmawan Putra, Sp.PD-KGH",
+      "dpjp_number": "3171000000009",
+      "referring_facility": "",
+      "expected_los": "2",
+      "organization_id": "org1"
+    },
+    "diagnosis": {
+      "primary_diagnosis_code": "I10",
+      "primary_diagnosis_name": "Essential (primary) hypertension",
+      "severity": "sedang",
+      "comorbidities": "",
+      "secondary_diagnoses": []
+    },
+    "procedures": [
+      {
+        "id": "proc-1",
+        "icd9_code": "90.01",
+        "name": "Complete blood count",
+        "category": "Laboratorium",
+        "performed_date": "2026-05-18",
+        "performed_by": "Laboratorium",
+        "conformance": "sesuai",
+        "unit_cost": "850000",
+        "quantity": "1",
+        "tariff_type": "VIP",
+        "notes": "Markup ekstrim (Tarif Master Data hanya 85.000)"
+      },
+      {
+        "id": "proc-2",
+        "icd9_code": "89.52",
+        "name": "Electrocardiogram",
+        "category": "Diagnostik",
+        "performed_date": "2026-05-18",
+        "performed_by": "Perawat",
+        "conformance": "sesuai",
+        "unit_cost": "1500000",
+        "quantity": "1",
+        "tariff_type": "VIP",
+        "notes": "Markup ekstrim (Tarif Master Data hanya 100.000)"
+      }
+    ],
+    "medications": [
+      {
+        "id": "med-1",
+        "drug_name": "Amlodipine",
+        "generic_name": "Amlodipine",
+        "route": "Oral",
+        "dosage": "5mg",
+        "frequency": "1x1",
+        "duration_days": "5",
+        "formulary": "Formularium RS",
+        "conformance": "sesuai",
+        "unit_cost": "50000",
+        "quantity": "5",
+        "notes": "Markup ekstrim (Tarif Master Data hanya 2.500 per tablet)"
+      }
+    ],
+    "inpatient": {
+      "is_inpatient_indicated": true,
+      "justification_reason": "Hipertensi emergensi",
+      "clinical_criteria_met": ["Kondisi tidak stabil / deteriorasi klinis"],
+      "los_conformance": "sesuai",
+      "los_deviation_reason": "",
+      "discharge_criteria": "",
+      "discharge_condition": ""
+    },
+    "outcome": {
+      "outcome": "ongoing",
+      "readmission_risk": "sedang",
+      "clinical_notes": "Tekanan darah mulai terkontrol",
+      "follow_up_plan": "",
+      "education_given": "",
+      "pathway_variance": "Tarif ditagihkan sangat tinggi dibanding standar."
+    }
+  }
+}

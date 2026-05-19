@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model ClinicalPathwaySummary {
+  id                   String   @id @default(cuid())
+  patientName          String
+  nik                  String
+  mrNumber             String?
+  diagnosisCode        String
+  diagnosisName        String
+  pathwayName          String
+  validationScore      Int
+  overallStatus        String
+  totalFlaggedCost     Decimal  @default(0) @db.Decimal(18, 2)
+  aiModel              String
+  formData             Json
+  masterData           Json
+  aiFeed               Json
+  brainResult          Json
+  rawText              String?
+  generatedAt          DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([nik])
+  @@index([mrNumber])
+  @@index([diagnosisCode])
+  @@index([createdAt])
+}
+
+// ─── Local Master Data ────────────────────────────────────────────────────────
+
+model MasterDiagnosis {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  tags        Json?    // e.g. ["infeksi", "paru"]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("cp_master_diagnosis")
+}
+
+model MasterProcedure {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  unit        String?
+  baseTariff  Decimal? @db.Decimal(18, 2)
+  tags        Json?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("cp_master_procedure")
+}
+
+model MasterMedication {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  unit        String?
+  baseTariff  Decimal? @db.Decimal(18, 2)
+  tags        Json?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("cp_master_medication")
+}
+
+model MasterPractitioner {
+  id             String   @id @default(cuid())
+  nik            String   @unique
+  name           String
+  specialization String?
+  tags           Json?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("cp_master_practitioner")
+}
+
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum SubmissionStatus {
+  PENGAJUAN           // Initial submission
+  PROSES_VERIFIKASI   // Under review
+  REVISI              // Revision required
+  APPROVED            // Approved
+  REJECTED            // Rejected
+}
+
+// ─── Main Submission Table ─────────────────────────────────────────────────────
+// Queryable fields → explicit columns
+// All form data      → formData Json column
+
+model Submission {
+  id           String           @id @default(cuid())
+  ticketNo     String           @unique   // e.g. BNIL20240506XXXX
+  monitorToken String           @unique   // HMAC-SHA256 for public monitoring
+
+  // Queryable / filterable fields
+  asuransi      String                      // Insurance company
+  namaInstitusi String                      // For display in list views
+  status        SubmissionStatus @default(PENGAJUAN)
+
+  // All form fields stored as JSON blob (Section A-H)
+  formData      Json
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  statusLogs StatusLog[]
+
+  @@index([status])
+  @@index([asuransi])
+  @@index([createdAt])
+  @@map("ecred_submissions")
+}
+
+// ─── Status History / Audit Log ───────────────────────────────────────────────
+
+model StatusLog {
+  id           String           @id @default(cuid())
+  submissionId String
+  status       SubmissionStatus
+  updatedBy    String           // e.g. "BNI LIFE" or "RS CIPTA"
+  remarks      String?          @db.Text
+  createdAt    DateTime         @default(now())
+
+  submission   Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@map("ecred_status_logs")
+}
+
+// ─── API Keys ─────────────────────────────────────────────────────────────────
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String                     // Human-readable label
+  keyId      String    @unique          // Public key identifier
+  keySecret  String                     // Hashed secret (HMAC)
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+
+  @@index([keyId])
+  @@map("ecred_api_keys")
+}

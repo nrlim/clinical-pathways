@@ -1,0 +1,115 @@
+{
+  "case_title": "Kasus 1: Pneumonia Dewasa - Ideal & Sesuai Master Data",
+  "form_data": {
+    "patient": {
+      "patient_name": "Budi Santoso",
+      "nik": "3171012345678901",
+      "birth_date": "1980-05-15",
+      "gender": "male",
+      "mr_number": "P012345678",
+      "address": "Jl. Merdeka No. 123, Jakarta Selatan",
+      "phone": "081234567890",
+      "guarantor": "BPJS Kesehatan",
+      "bpjs_number": "0001234567890"
+    },
+    "encounter": {
+      "encounter_class": "inpatient",
+      "admission_date": "2026-05-18",
+      "admission_time": "09:30",
+      "discharge_date": "2026-05-22",
+      "discharge_time": "14:00",
+      "ward": "I",
+      "room_number": "Melati-01",
+      "bed_number": "2",
+      "practitioner_name": "dr. Andi Wijaya, Sp.PD-KPTI",
+      "dpjp_number": "3173010101800001",
+      "referring_facility": "Klinik Sehat Bersama",
+      "expected_los": "5",
+      "organization_id": "org1"
+    },
+    "diagnosis": {
+      "primary_diagnosis_code": "J18.9",
+      "primary_diagnosis_name": "Pneumonia, unspecified organism",
+      "severity": "sedang",
+      "comorbidities": "Tidak ada",
+      "secondary_diagnoses": []
+    },
+    "procedures": [
+      {
+        "id": "proc-1",
+        "icd9_code": "87.44",
+        "name": "Routine chest x-ray",
+        "category": "Radiologi",
+        "performed_date": "2026-05-18",
+        "performed_by": "Radiografer",
+        "conformance": "sesuai",
+        "unit_cost": "250000",
+        "quantity": "1",
+        "tariff_type": "JKN",
+        "notes": "Untuk konfirmasi pneumonia"
+      },
+      {
+        "id": "proc-2",
+        "icd9_code": "90.01",
+        "name": "Complete blood count",
+        "category": "Laboratorium",
+        "performed_date": "2026-05-18",
+        "performed_by": "Analis",
+        "conformance": "sesuai",
+        "unit_cost": "85000",
+        "quantity": "1",
+        "tariff_type": "JKN",
+        "notes": "Cek leukosit"
+      }
+    ],
+    "medications": [
+      {
+        "id": "med-1",
+        "drug_name": "Ceftriaxone 1 g injection",
+        "generic_name": "Ceftriaxone",
+        "route": "IV",
+        "dosage": "1g",
+        "frequency": "2x1",
+        "duration_days": "4",
+        "formulary": "Formularium Nasional",
+        "conformance": "sesuai",
+        "unit_cost": "65000",
+        "quantity": "8",
+        "notes": "Antibiotik empiris"
+      },
+      {
+        "id": "med-2",
+        "drug_name": "Paracetamol 500 mg tablet",
+        "generic_name": "Paracetamol",
+        "route": "Oral",
+        "dosage": "500mg",
+        "frequency": "3x1",
+        "duration_days": "3",
+        "formulary": "Formularium Nasional",
+        "conformance": "sesuai",
+        "unit_cost": "750",
+        "quantity": "9",
+        "notes": "Bila demam"
+      }
+    ],
+    "inpatient": {
+      "is_inpatient_indicated": true,
+      "justification_reason": "Pneumonia dengan sesak dan demam tinggi, butuh antibiotik IV.",
+      "clinical_criteria_met": [
+        "Pemberian antibiotik intravena"
+      ],
+      "los_conformance": "sesuai",
+      "los_deviation_reason": "",
+      "discharge_criteria": "Demam turun, sesak hilang, klinis stabil.",
+      "discharge_condition": "pulang_sembuh"
+    },
+    "outcome": {
+      "outcome": "sembuh",
+      "readmission_risk": "rendah",
+      "clinical_notes": "Pasien pulang dalam keadaan baik.",
+      "follow_up_plan": "Kontrol poli rawat jalan 1 minggu lagi.",
+      "education_given": "Edukasi minum obat dan istirahat.",
+      "pathway_variance": "Tidak ada"
+    }
+  }
+}

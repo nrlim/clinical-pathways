@@ -1,0 +1,86 @@
+{
+  "case_title": "Negative Case 1: Semua Data Tidak Ditemukan di Master Data (Ngawur)",
+  "form_data": {
+    "patient": {
+      "patient_name": "Siti Aminah (Invalid Data)",
+      "nik": "9999888877776666",
+      "birth_date": "1990-01-01",
+      "gender": "female",
+      "mr_number": "P999999",
+      "address": "Alamat Palsu",
+      "phone": "0811111111",
+      "guarantor": "Umum",
+      "bpjs_number": ""
+    },
+    "encounter": {
+      "encounter_class": "inpatient",
+      "admission_date": "2026-05-18",
+      "admission_time": "10:00",
+      "discharge_date": "2026-05-20",
+      "discharge_time": "10:00",
+      "ward": "III",
+      "room_number": "Mawar",
+      "bed_number": "1",
+      "practitioner_name": "dr. Fiktif",
+      "dpjp_number": "XYZ123",
+      "referring_facility": "",
+      "expected_los": "3",
+      "organization_id": "org1"
+    },
+    "diagnosis": {
+      "primary_diagnosis_code": "ZZ.99",
+      "primary_diagnosis_name": "Penyakit Misterius",
+      "severity": "sedang",
+      "comorbidities": "",
+      "secondary_diagnoses": []
+    },
+    "procedures": [
+      {
+        "id": "proc-1",
+        "icd9_code": "99.99",
+        "name": "Tindakan Ajaib",
+        "category": "Lain-lain",
+        "performed_date": "2026-05-18",
+        "performed_by": "Dukun",
+        "conformance": "tidak",
+        "unit_cost": "5000000",
+        "quantity": "1",
+        "tariff_type": "Umum",
+        "notes": ""
+      }
+    ],
+    "medications": [
+      {
+        "id": "med-1",
+        "drug_name": "Obat Dewa 500mg",
+        "generic_name": "Placebo",
+        "route": "Oral",
+        "dosage": "500mg",
+        "frequency": "3x1",
+        "duration_days": "3",
+        "formulary": "Non-Formularium",
+        "conformance": "tidak",
+        "unit_cost": "1500000",
+        "quantity": "1",
+        "notes": ""
+      }
+    ],
+    "inpatient": {
+      "is_inpatient_indicated": false,
+      "justification_reason": "Tidak jelas",
+      "clinical_criteria_met": [],
+      "los_conformance": "tidak",
+      "los_deviation_reason": "",
+      "discharge_criteria": "",
+      "discharge_condition": "pulang_aps"
+    },
+    "outcome": {
+      "outcome": "pulang_aps",
+      "readmission_risk": "tinggi",
+      "clinical_notes": "Pasien pulang paksa",
+      "follow_up_plan": "",
+      "education_given": "",
+      "pathway_variance": "Semua menyimpang"
+    }
+  }
+}

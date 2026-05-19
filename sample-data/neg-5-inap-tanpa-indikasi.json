@@ -1,0 +1,86 @@
+{
+  "case_title": "Negative Case 5: Rawat Inap Tanpa Indikasi (ISPA Ringan)",
+  "form_data": {
+    "patient": {
+      "patient_name": "Doni Pratama",
+      "nik": "3171012345678003",
+      "birth_date": "2005-08-20",
+      "gender": "male",
+      "mr_number": "P012345603",
+      "address": "Jl. Gatot Subroto, Jakarta",
+      "phone": "081234500003",
+      "guarantor": "BPJS Kesehatan",
+      "bpjs_number": "000111222444"
+    },
+    "encounter": {
+      "encounter_class": "inpatient",
+      "admission_date": "2026-05-18",
+      "admission_time": "15:00",
+      "discharge_date": "2026-05-19",
+      "discharge_time": "10:00",
+      "ward": "III",
+      "room_number": "Dahlia-01",
+      "bed_number": "4",
+      "practitioner_name": "dr. Budi Santoso",
+      "dpjp_number": "3171000000003",
+      "referring_facility": "",
+      "expected_los": "1",
+      "organization_id": "org1"
+    },
+    "diagnosis": {
+      "primary_diagnosis_code": "J06.9",
+      "primary_diagnosis_name": "Acute upper respiratory infection, unspecified",
+      "severity": "ringan",
+      "comorbidities": "",
+      "secondary_diagnoses": []
+    },
+    "procedures": [
+      {
+        "id": "proc-1",
+        "icd9_code": "90.01",
+        "name": "Complete blood count",
+        "category": "Laboratorium",
+        "performed_date": "2026-05-18",
+        "performed_by": "Laboratorium",
+        "conformance": "tidak",
+        "unit_cost": "85000",
+        "quantity": "1",
+        "tariff_type": "JKN",
+        "notes": "ISPA ringan tidak butuh DL rutin"
+      }
+    ],
+    "medications": [
+      {
+        "id": "med-1",
+        "drug_name": "Paracetamol",
+        "generic_name": "Paracetamol",
+        "route": "Oral",
+        "dosage": "500mg",
+        "frequency": "3x1",
+        "duration_days": "1",
+        "formulary": "Formularium Nasional",
+        "conformance": "sesuai",
+        "unit_cost": "800",
+        "quantity": "3",
+        "notes": "Obat demam"
+      }
+    ],
+    "inpatient": {
+      "is_inpatient_indicated": false,
+      "justification_reason": "Pasien ingin dirawat",
+      "clinical_criteria_met": [],
+      "los_conformance": "tidak",
+      "los_deviation_reason": "Seharusnya rawat jalan",
+      "discharge_criteria": "",
+      "discharge_condition": "pulang_sembuh"
+    },
+    "outcome": {
+      "outcome": "sembuh",
+      "readmission_risk": "rendah",
+      "clinical_notes": "Pasien batuk pilek ringan",
+      "follow_up_plan": "Rawat jalan",
+      "education_given": "Istirahat",
+      "pathway_variance": "Tidak ada indikasi medis untuk admisi rawat inap (hospitalisasi)."
+    }
+  }
+}

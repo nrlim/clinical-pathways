@@ -1,0 +1,113 @@
+{
+  "case_title": "Kasus 3: Apendisitis Akut - Sesuai Master Data (Bedah)",
+  "form_data": {
+    "patient": {
+      "patient_name": "Siti Aminah",
+      "nik": "3171012345678004",
+      "birth_date": "1995-12-12",
+      "gender": "female",
+      "mr_number": "P012345604",
+      "address": "Jl. Kamboja, Jakarta",
+      "phone": "081234500004",
+      "guarantor": "Umum",
+      "bpjs_number": ""
+    },
+    "encounter": {
+      "encounter_class": "inpatient",
+      "admission_date": "2026-05-18",
+      "admission_time": "18:00",
+      "discharge_date": "",
+      "discharge_time": "",
+      "ward": "II",
+      "room_number": "Tulip-02",
+      "bed_number": "1",
+      "practitioner_name": "dr. Eko Prasetyo, Sp.B",
+      "dpjp_number": "3171000000005",
+      "referring_facility": "",
+      "expected_los": "3",
+      "organization_id": "org1"
+    },
+    "diagnosis": {
+      "primary_diagnosis_code": "K35.8",
+      "primary_diagnosis_name": "Acute appendicitis, other and unspecified",
+      "severity": "sedang",
+      "comorbidities": "",
+      "secondary_diagnoses": []
+    },
+    "procedures": [
+      {
+        "id": "proc-1",
+        "icd9_code": "47.09",
+        "name": "Other appendectomy",
+        "category": "Operasi",
+        "performed_date": "2026-05-19",
+        "performed_by": "Dokter Bedah",
+        "conformance": "sesuai",
+        "unit_cost": "4500000",
+        "quantity": "1",
+        "tariff_type": "Umum",
+        "notes": "Operasi berjalan lancar"
+      },
+      {
+        "id": "proc-2",
+        "icd9_code": "88.76",
+        "name": "Diagnostic ultrasound of abdomen",
+        "category": "Radiologi",
+        "performed_date": "2026-05-18",
+        "performed_by": "Dokter Radiologi",
+        "conformance": "sesuai",
+        "unit_cost": "350000",
+        "quantity": "1",
+        "tariff_type": "Umum",
+        "notes": "Untuk diagnosis pre-operatif"
+      }
+    ],
+    "medications": [
+      {
+        "id": "med-1",
+        "drug_name": "Ringer Lactate",
+        "generic_name": "Ringer Lactate",
+        "route": "IV",
+        "dosage": "500ml",
+        "frequency": "8 jam",
+        "duration_days": "2",
+        "formulary": "Formularium Nasional",
+        "conformance": "sesuai",
+        "unit_cost": "12000",
+        "quantity": "6",
+        "notes": "Cairan maintenance dan puasa operatif"
+      },
+      {
+        "id": "med-2",
+        "drug_name": "Ceftriaxone",
+        "generic_name": "Ceftriaxone",
+        "route": "IV",
+        "dosage": "1g",
+        "frequency": "1x1",
+        "duration_days": "1",
+        "formulary": "Formularium Nasional",
+        "conformance": "sesuai",
+        "unit_cost": "15000",
+        "quantity": "1",
+        "notes": "Profilaksis pre-operatif"
+      }
+    ],
+    "inpatient": {
+      "is_inpatient_indicated": true,
+      "justification_reason": "Nyeri abdomen akut, indikasi operasi cito",
+      "clinical_criteria_met": ["Tindakan pembedahan / prosedural kompleks"],
+      "los_conformance": "sesuai",
+      "los_deviation_reason": "",
+      "discharge_criteria": "",
+      "discharge_condition": ""
+    },
+    "outcome": {
+      "outcome": "ongoing",
+      "readmission_risk": "rendah",
+      "clinical_notes": "Pasien post-op hari ke-1, kondisi stabil",
+      "follow_up_plan": "Cek bising usus, toleransi diet",
+      "education_given": "Mobilisasi bertahap",
+      "pathway_variance": "Sesuai standar"
+    }
+  }
+}

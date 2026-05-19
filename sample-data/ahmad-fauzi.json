@@ -1,0 +1,88 @@
+{
+  "case_title": "Kasus 2: Dengue Hemorrhagic Fever - Ongoing & Sesuai Master Data",
+  "form_data": {
+    "patient": {
+      "patient_name": "Ahmad Fauzi",
+      "nik": "3322110044556677",
+      "birth_date": "2010-08-17",
+      "gender": "male",
+      "mr_number": "P000045612",
+      "address": "Perumahan Indah Blok C No. 1, Bekasi",
+      "phone": "085544332211",
+      "guarantor": "Umum",
+      "bpjs_number": ""
+    },
+    "encounter": {
+      "encounter_class": "inpatient",
+      "admission_date": "2026-05-17",
+      "admission_time": "18:00",
+      "discharge_date": "",
+      "discharge_time": "",
+      "ward": "II",
+      "room_number": "Mawar-02",
+      "bed_number": "3",
+      "practitioner_name": "dr. Citra Lestari, Sp.A",
+      "dpjp_number": "3173010404850004",
+      "referring_facility": "",
+      "expected_los": "4",
+      "organization_id": "org1"
+    },
+    "diagnosis": {
+      "primary_diagnosis_code": "A91",
+      "primary_diagnosis_name": "Dengue haemorrhagic fever",
+      "severity": "sedang",
+      "comorbidities": "",
+      "secondary_diagnoses": []
+    },
+    "procedures": [
+      {
+        "id": "proc-1",
+        "icd9_code": "90.59",
+        "name": "Serial complete blood count for dengue monitoring",
+        "category": "Diagnostik",
+        "performed_date": "2026-05-17",
+        "performed_by": "Laboratorium",
+        "conformance": "sesuai",
+        "unit_cost": "150000",
+        "quantity": "4",
+        "tariff_type": "Umum",
+        "notes": "Monitoring Ht dan Trombosit"
+      }
+    ],
+    "medications": [
+      {
+        "id": "med-1",
+        "drug_name": "Ringer Laktat 500 mL",
+        "generic_name": "Ringer Lactate",
+        "route": "IV",
+        "dosage": "500ml",
+        "frequency": "20 tetes/menit",
+        "duration_days": "2",
+        "formulary": "Formularium Nasional",
+        "conformance": "sesuai",
+        "unit_cost": "25000",
+        "quantity": "8",
+        "notes": "Resusitasi cairan"
+      }
+    ],
+    "inpatient": {
+      "is_inpatient_indicated": true,
+      "justification_reason": "Trombositopenia progresif, tanda kebocoran plasma.",
+      "clinical_criteria_met": [
+        "Memerlukan monitoring ketat 24 jam"
+      ],
+      "los_conformance": "review",
+      "los_deviation_reason": "Masih dalam perawatan.",
+      "discharge_criteria": "Trombosit > 100.000, hematokrit stabil.",
+      "discharge_condition": ""
+    },
+    "outcome": {
+      "outcome": "ongoing",
+      "readmission_risk": "",
+      "clinical_notes": "Pasien saat ini masuk fase kritis.",
+      "follow_up_plan": "Lanjut pemantauan cairan dan Ht serial.",
+      "education_given": "Edukasi keluarga tentang tanda bahaya (warning signs) DBD.",
+      "pathway_variance": "Tidak ada"
+    }
+  }
+}

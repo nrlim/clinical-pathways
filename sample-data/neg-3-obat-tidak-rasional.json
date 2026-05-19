@@ -1,0 +1,114 @@
+{
+  "case_title": "Negative Case 3: Obat Tidak Rasional (Diare diberi Ceftriaxone & Metformin)",
+  "form_data": {
+    "patient": {
+      "patient_name": "Bayu Saputra",
+      "nik": "3171012345678001",
+      "birth_date": "1992-10-10",
+      "gender": "male",
+      "mr_number": "P012345601",
+      "address": "Jl. Thamrin, Jakarta",
+      "phone": "081234500001",
+      "guarantor": "BPJS Kesehatan",
+      "bpjs_number": "000111222333"
+    },
+    "encounter": {
+      "encounter_class": "inpatient",
+      "admission_date": "2026-05-18",
+      "admission_time": "14:00",
+      "discharge_date": "",
+      "discharge_time": "",
+      "ward": "III",
+      "room_number": "Melati-05",
+      "bed_number": "2",
+      "practitioner_name": "dr. Budi Santoso",
+      "dpjp_number": "3171000000003",
+      "referring_facility": "",
+      "expected_los": "3",
+      "organization_id": "org1"
+    },
+    "diagnosis": {
+      "primary_diagnosis_code": "A09",
+      "primary_diagnosis_name": "Infectious gastroenteritis and colitis, unspecified",
+      "severity": "ringan",
+      "comorbidities": "",
+      "secondary_diagnoses": []
+    },
+    "procedures": [
+      {
+        "id": "proc-1",
+        "icd9_code": "99.18",
+        "name": "Injection or infusion of electrolytes",
+        "category": "Terapi",
+        "performed_date": "2026-05-18",
+        "performed_by": "Perawat",
+        "conformance": "sesuai",
+        "unit_cost": "85000",
+        "quantity": "1",
+        "tariff_type": "JKN",
+        "notes": "Rehidrasi IV"
+      }
+    ],
+    "medications": [
+      {
+        "id": "med-1",
+        "drug_name": "NaCl 0.9%",
+        "generic_name": "NaCl 0.9%",
+        "route": "IV",
+        "dosage": "500ml",
+        "frequency": "8 jam",
+        "duration_days": "1",
+        "formulary": "Formularium Nasional",
+        "conformance": "sesuai",
+        "unit_cost": "10000",
+        "quantity": "3",
+        "notes": "Rehidrasi"
+      },
+      {
+        "id": "med-2",
+        "drug_name": "Ceftriaxone",
+        "generic_name": "Ceftriaxone",
+        "route": "IV",
+        "dosage": "1g",
+        "frequency": "2x1",
+        "duration_days": "2",
+        "formulary": "Formularium Nasional",
+        "conformance": "tidak",
+        "unit_cost": "15000",
+        "quantity": "4",
+        "notes": "Antibiotik IV berlebihan untuk diare non-spesifik tanpa indikasi berat"
+      },
+      {
+        "id": "med-3",
+        "drug_name": "Metformin",
+        "generic_name": "Metformin",
+        "route": "Oral",
+        "dosage": "500mg",
+        "frequency": "2x1",
+        "duration_days": "2",
+        "formulary": "Formularium Nasional",
+        "conformance": "tidak",
+        "unit_cost": "1200",
+        "quantity": "4",
+        "notes": "Sangat tidak rasional, ini obat DM tipe 2, padahal komorbid DM kosong"
+      }
+    ],
+    "inpatient": {
+      "is_inpatient_indicated": true,
+      "justification_reason": "Dehidrasi ringan",
+      "clinical_criteria_met": ["Dehidrasi berat / gangguan elektrolit"],
+      "los_conformance": "sesuai",
+      "los_deviation_reason": "",
+      "discharge_criteria": "",
+      "discharge_condition": ""
+    },
+    "outcome": {
+      "outcome": "ongoing",
+      "readmission_risk": "rendah",
+      "clinical_notes": "Dehidrasi teratasi",
+      "follow_up_plan": "",
+      "education_given": "",
+      "pathway_variance": "Penggunaan obat irasional."
+    }
+  }
+}
