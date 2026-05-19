@@ -32,9 +32,18 @@ export interface SumoPodCompletionInput {
 
 const DEFAULT_SUMOPOD_BASE_URL = 'https://ai.sumopod.com/v1'
 const DEFAULT_SUMOPOD_MODEL = 'gpt-4o-mini'
+/** Per-attempt fetch timeout in milliseconds. Defaults to 30s. Override via SUMOPOD_TIMEOUT_MS. */
+const DEFAULT_TIMEOUT_MS = 30_000
 
 export function getSumoPodModel(): string {
   return process.env.SUMOPOD_MODEL ?? DEFAULT_SUMOPOD_MODEL
+}
+
+/** Returns the per-fetch timeout in ms (from env or default). */
+export function getRequestTimeoutMs(): number {
+  const raw = process.env.SUMOPOD_TIMEOUT_MS
+  const parsed = raw ? parseInt(raw, 10) : NaN
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_TIMEOUT_MS
 }
 
 export async function createSumoPodChatCompletion(input: SumoPodCompletionInput): Promise<string> {
@@ -104,6 +113,7 @@ async function requestSumoPodCompletion(
   }
 
   const endpoint = `${baseUrl.replace(/\/$/, '')}/chat/completions`
+  const timeoutMs = getRequestTimeoutMs()
   const options = {
     method: 'POST',
     headers: {
@@ -112,20 +122,24 @@ async function requestSumoPodCompletion(
     },
     body: JSON.stringify(body),
     cache: 'no-store' as RequestCache,
+    signal: AbortSignal.timeout(timeoutMs),
   }
 
-  // Attempt up to 3 times to handle sporadic Next.js "fetch failed" (ECONNRESET/IPv6 issues)
+  // Attempt up to 2 times to handle sporadic Next.js "fetch failed" (ECONNRESET/IPv6 issues).
+  // Each attempt carries its own AbortSignal so the timeout resets per attempt.
   let lastError: unknown
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      return await fetch(endpoint, options)
+      // Recreate the signal per attempt so it is not already aborted.
+      const attemptOptions = { ...options, signal: AbortSignal.timeout(timeoutMs) }
+      return await fetch(endpoint, attemptOptions)
     } catch (error) {
       lastError = error
-      console.warn(`[SumoPod] Fetch attempt ${attempt} failed:`, (error as any)?.message || error)
-      if (attempt < 3) {
-        // Wait 500ms before retrying (reduced from 2s)
-        await new Promise((resolve) => setTimeout(resolve, 500))
-      }
+      const isTimeout = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')
+      console.warn(`[SumoPod] Fetch attempt ${attempt} failed${isTimeout ? ' (timeout)' : ''}:`, (error as any)?.message || error)
+      // Do not retry on timeout — it will only eat more wall-clock time.
+      if (isTimeout) break
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500))
     }
   }
 

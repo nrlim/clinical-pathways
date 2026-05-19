@@ -5,6 +5,12 @@ import { saveClinicalPathwaySummary } from '@/lib/clinical-pathway/repository'
 import type { ClinicalPathwayForm, ClinicalMasterData } from '@/types/clinical-pathway'
 
 export const runtime = 'nodejs'
+/**
+ * Allow up to 60 s of wall-clock time.
+ * Per-fetch timeout (SUMOPOD_TIMEOUT_MS, default 30 s) fires well before this,
+ * so the function will always return a JSON error body rather than a cold 504.
+ */
+export const maxDuration = 60
 
 export async function POST(request: Request) {
   try {
@@ -21,11 +27,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ brain, feed, savedRecordId: savedRecord.id })
   } catch (error) {
+    const isTimeout = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')
     const cause = error instanceof Error && 'cause' in error ? error.cause : undefined
     console.error('Brain AI API Error:', error, cause)
     return NextResponse.json(
-      { message: error instanceof Error ? error.message : 'Brain AI gagal membuat clinical pathway.' },
-      { status: 502 },
+      {
+        message: isTimeout
+          ? 'Brain AI timeout: model AI memerlukan waktu terlalu lama. Coba lagi atau gunakan model yang lebih cepat.'
+          : (error instanceof Error ? error.message : 'Brain AI gagal membuat clinical pathway.'),
+      },
+      { status: isTimeout ? 504 : 502 },
     )
   }
 }
