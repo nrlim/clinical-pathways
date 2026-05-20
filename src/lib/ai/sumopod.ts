@@ -69,10 +69,17 @@ export async function createSumoPodChatCompletion(input: SumoPodCompletionInput)
       throw new Error(`SumoPod AI tidak mengembalikan konten summary. finish_reason=${retryPayload.choices?.[0]?.finish_reason ?? 'unknown'}`)
     }
 
+    const compactMaxTokens = Math.min(input.maxTokens ?? 3500, 3500)
     const compactRetryResponse = await requestSumoPodCompletion(baseUrl, apiKey, {
       ...input,
-      maxTokens: Math.min(input.maxTokens ?? 3500, 3500),
+      maxTokens: compactMaxTokens,
       temperature: 0.1,
+      // Cap budgetTokens proportionally — for reasoning models (e.g. kimi-k2.6),
+      // the thinking budget must never exceed the output token limit or the model
+      // will consume all tokens on CoT and return empty content, causing another retry.
+      budgetTokens: input.budgetTokens != null
+        ? Math.min(input.budgetTokens, Math.floor(compactMaxTokens * 0.4))
+        : undefined,
     }, false)
     if (!compactRetryResponse.ok) {
       const message = await compactRetryResponse.text()

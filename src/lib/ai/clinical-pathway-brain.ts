@@ -11,8 +11,13 @@ export async function generateClinicalPathwayBrain(feed: AiSummaryFeed): Promise
   const startedAt = Date.now()
   const rawText = await createSumoPodChatCompletion({
     temperature: 0.1,
-    maxTokens: 5000,
-    budgetTokens: 2500,
+    // maxTokens: batas output — model berhenti saat selesai, bukan saat mencapai limit.
+    // 8000 mencegah truncation JSON schema besar tanpa memperlambat response.
+    maxTokens: 8000,
+    // budgetTokens: ini yang menentukan kecepatan thinking kimi-k2.6.
+    // 1500 cukup untuk reasoning kasus klinis standar (1–3 prosedur/obat).
+    // Jangan naikkan kecuali ada kasus sangat kompleks yang butuh reasoning panjang.
+    budgetTokens: 1500,
     messages: [
       { role: 'system', content: buildSystemPrompt() },
       { role: 'user', content: buildUserPrompt(feed) },
@@ -411,7 +416,12 @@ function cleanJsonCandidate(rawText: string): string {
 async function repairBrainJson(rawJson: string, parseError: unknown): Promise<string> {
   return await createSumoPodChatCompletion({
     temperature: 0,
-    maxTokens: 5000,
+    // Must match or exceed the original output token size so repair doesn't truncate.
+    maxTokens: 8000,
+    // CRITICAL: always cap budgetTokens for reasoning models (kimi-k2.6).
+    // Without this cap, the model enters an unbounded thinking loop on repair calls
+    // which causes Step 3 to hang indefinitely. 2000 is enough for JSON repair reasoning.
+    budgetTokens: 2000,
     messages: [
       {
         role: 'system',
