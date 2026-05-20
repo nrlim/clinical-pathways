@@ -57,7 +57,7 @@ Rules:
 }
 
 function buildUserPrompt(feed: AiSummaryFeed): string {
-  const schema = `{"executiveSummary":"str","clinicalSynopsis":"str","workingAssessment":"str","pathwayName":"str","careGoals":["str"],"validationDashboard":{"overallStatus":"sesuai|tidak_sesuai|perlu_review|data_kurang","score":0,"passedCount":0,"reviewCount":0,"failedCount":0,"totalFlaggedCost":0,"quickFindings":["str"],"validatedItems":[{"id":"str","type":"procedure|medication","code":"str","name":"str","status":"sesuai|tidak_sesuai|perlu_review|data_kurang","diagnosisRelation":"str","masterDataValidation":"str","unitCost":0,"quantity":0,"totalCost":0,"priceAssessment":"str","issue":"str","recommendedAction":"str"}]},"dayByDayPlan":[{"day":"str","focus":"str","assessments":["str"],"interventions":["str"],"medicationConsiderations":["str"],"monitoring":["str"],"dischargeCriteria":["str"]}],"conformanceAnalysis":{"diagnosisProcedureFit":"str","diagnosisMedicationFit":"str","inpatientJustification":"str","losAssessment":"str","costSignal":"str"},"riskStratification":[{"level":"rendah|sedang|tinggi|kritis","issue":"str","rationale":"str","recommendedAction":"str"}],"pathwayVariances":[{"area":"str","observedVariance":"str","potentialImpact":"str","recommendedFollowUp":"str"}],"dischargeReadiness":{"status":"belum_siap|perlu_review|siap|tidak_dinilai","criteriaMet":["str"],"blockers":["str"],"followUpPlan":"str","patientEducation":"str"},"masterDataMapping":{"patientReference":"str","suggestedResources":["str"],"missingMasterData":["str"]},"aiSummaryForClinician":"str","aiSummaryForCoder":"str","aiSummaryForPatient":"str","safetyNotes":["str"],"dataQualityIssues":["str"]}`
+  const schema = `{"executiveSummary":"str","clinicalSynopsis":"str","workingAssessment":"str","pathwayName":"str","careGoals":["str"],"validationDashboard":{"overallStatus":"sesuai|tidak_sesuai|perlu_review|data_kurang","score":0,"passedCount":0,"reviewCount":0,"failedCount":0,"totalFlaggedCost":0,"quickFindings":["str"],"validatedItems":[{"id":"str","type":"procedure|medication","code":"str","name":"str","status":"sesuai|tidak_sesuai|perlu_review|data_kurang","diagnosisRelation":"str","masterDataValidation":"str","unitCost":0,"quantity":0,"totalCost":0,"priceAssessment":"str","issue":"str","recommendedAction":"str"}],"documentVerification":[{"id":"str","name":"str","description":"str","required":true,"file_name":"str|null","file_size":"str|null","uploaded_at":"str|null","status":"available|missing","verification_status":"valid|invalid|unchecked","verification_note":"str"}]},"dayByDayPlan":[{"day":"str","focus":"str","assessments":["str"],"interventions":["str"],"medicationConsiderations":["str"],"monitoring":["str"],"dischargeCriteria":["str"]}],"conformanceAnalysis":{"diagnosisProcedureFit":"str","diagnosisMedicationFit":"str","inpatientJustification":"str","losAssessment":"str","costSignal":"str"},"riskStratification":[{"level":"rendah|sedang|tinggi|kritis","issue":"str","rationale":"str","recommendedAction":"str"}],"pathwayVariances":[{"area":"str","observedVariance":"str","potentialImpact":"str","recommendedFollowUp":"str"}],"dischargeReadiness":{"status":"belum_siap|perlu_review|siap|tidak_dinilai","criteriaMet":["str"],"blockers":["str"],"followUpPlan":"str","patientEducation":"str"},"masterDataMapping":{"patientReference":"str","suggestedResources":["str"],"missingMasterData":["str"]},"aiSummaryForClinician":"str","aiSummaryForCoder":"str","aiSummaryForPatient":"str","safetyNotes":["str"],"dataQualityIssues":["str"]}`
 
   const actualLos = calculateActualLos(feed.encounter.admission_date, feed.encounter.discharge_date)
   const expectedLos = feed.masterDataValidation.primaryDiagnosis.expectedLos
@@ -78,6 +78,7 @@ Instructions:
 7. riskStratification, pathwayVariances, dischargeReadiness: specific and actionable, not generic.
 8. masterDataMapping: summarize found/missing items and what needs to be added.
 9. Three distinct summaries: clinician (clinical depth), coder (codes & billing), patient (plain language).
+10. documentVerification: Evaluate the supporting documents in feed against clinical context. For each document, if the file is uploaded (status = available), perform a semantic check: verify if the document's uploaded filename or contents match the patient name, NIK, guarantor, or diagnosis where applicable (e.g. check KTP against patient NIK/name, check SPRI against primary diagnosis/practitioner, check BPJS against guarantor/bpjs_number). Set verification_status to 'valid' or 'invalid' based on this check, and document the reason in verification_note. If the document is missing (status = missing), set verification_status to 'unchecked' and state in verification_note that the document is missing.
 
 Feed:
 ${compressedFeed}`
@@ -140,6 +141,16 @@ function buildCompressedFeed(feed: AiSummaryFeed): string {
     })),
     inpatient: feed.inpatient,
     outcome: feed.outcome,
+    documents: (feed.documents ?? []).map(d => ({
+      id: d.id,
+      name: d.name,
+      description: d.description,
+      required: d.required,
+      file_name: d.file_name,
+      file_size: d.file_size,
+      uploaded_at: d.uploaded_at,
+      status: d.status,
+    })),
     masterDataValidation: feed.masterDataValidation,
     thresholds: feed.thresholds,
   }
@@ -235,9 +246,70 @@ function enforceMasterDataValidation(
   const totalFlaggedCost = enforcedItems
     .filter((item) => item.status !== 'sesuai')
     .reduce((sum, item) => sum + (Number(item.totalCost) || 0), 0)
-  const score = totalChecked > 0 ? Math.max(0, Math.round((passedCount / totalChecked) * 100)) : 100
-  const overallStatus = getOverallStatus({ totalChecked, reviewCount, failedCount })
-  const deterministicIssues = buildDeterministicDataQualityIssues(feed, enforcedItems)
+
+  // --- Supporting Document Verification & Penalty Logic ---
+  const aiDocs = output.validationDashboard?.documentVerification ?? []
+  const aiDocsMap = new Map(aiDocs.map((d) => [d.id, d]))
+
+  let missingRequiredCount = 0
+  let invalidCount = 0
+  const docDeterministicIssues: string[] = []
+  const docQuickFindings: string[] = []
+
+  const enforcedDocuments = (feed.documents ?? []).map((doc) => {
+    const aiDoc = aiDocsMap.get(doc.id)
+    const hasFile = doc.file_name && doc.file_name.trim().length > 0
+    
+    let verification_status: 'valid' | 'invalid' | 'unchecked' = 'unchecked'
+    let verification_note = doc.verification_note || ''
+
+    if (!hasFile) {
+      if (doc.required) {
+        missingRequiredCount++
+        verification_status = 'unchecked'
+        verification_note = 'Dokumen wajib ini belum diunggah.'
+        docDeterministicIssues.push(`DOKUMEN PENDUKUNG HILANG: Dokumen wajib ${doc.name} tidak diunggah.`)
+        docQuickFindings.push(`Dokumen wajib ${doc.name} tidak diunggah (-15 poin).`)
+      } else {
+        verification_status = 'unchecked'
+        verification_note = 'Dokumen opsional belum diunggah.'
+      }
+    } else {
+      // Document is uploaded. Look at AI's verification status
+      const aiStatus = aiDoc?.verification_status || 'valid'
+      verification_status = aiStatus
+      verification_note = aiDoc?.verification_note || 'Dokumen terunggah.'
+
+      if (verification_status === 'invalid') {
+        invalidCount++
+        docDeterministicIssues.push(`DOKUMEN TIDAK VALID: Dokumen ${doc.name} dinyatakan tidak valid oleh AI: ${verification_note}`)
+        docQuickFindings.push(`Dokumen ${doc.name} dinyatakan TIDAK VALID oleh AI (-15 poin).`)
+      }
+    }
+
+    return {
+      ...doc,
+      status: hasFile ? 'available' as const : 'missing' as const,
+      verification_status,
+      verification_note,
+    }
+  })
+
+  const baseScore = totalChecked > 0 ? Math.max(0, Math.round((passedCount / totalChecked) * 100)) : 100
+  const penalties = (missingRequiredCount + invalidCount) * 15
+  const score = Math.max(0, baseScore - penalties)
+
+  let overallStatus = getOverallStatus({ totalChecked, reviewCount, failedCount })
+  if (invalidCount > 0) {
+    overallStatus = 'tidak_sesuai'
+  } else if (missingRequiredCount > 0 && overallStatus !== 'tidak_sesuai') {
+    overallStatus = 'perlu_review'
+  }
+
+  const deterministicIssues = [
+    ...buildDeterministicDataQualityIssues(feed, enforcedItems),
+    ...docDeterministicIssues,
+  ]
   const missingMasterData = buildMissingMasterData(enforcedItems)
 
   // Determine actual vs standard expected LOS based on primary diagnosis expectedLos
@@ -315,8 +387,10 @@ function enforceMasterDataValidation(
         ...(output.validationDashboard?.quickFindings ?? []),
         `Coverage katalog standar lokal: ${feed.masterDataValidation.summary.coverageRate}% (${feed.masterDataValidation.summary.validCount}/${feed.masterDataValidation.summary.totalChecked} item valid).`,
         ...(missingMasterData.length > 0 ? [`${missingMasterData.length} item belum ditemukan/aktif di katalog standar lokal.`] : []),
+        ...docQuickFindings,
       ]),
       validatedItems: enforcedItems,
+      documentVerification: enforcedDocuments,
     },
     masterDataMapping: {
       ...output.masterDataMapping,

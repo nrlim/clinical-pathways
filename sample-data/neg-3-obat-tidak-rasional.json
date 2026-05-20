@@ -111,6 +111,58 @@
       "follow_up_plan": "",
       "education_given": "",
       "pathway_variance": "Penggunaan obat irasional."
-    }
+    },
+    "documents": [
+      {
+        "id": "ktp",
+        "name": "KTP / NIK",
+        "description": "Kartu Tanda Penduduk pasien untuk verifikasi identitas resmi",
+        "required": true,
+        "file_name": "sample-ktp.jpg",
+        "file_size": "97.9 KB",
+        "uploaded_at": "2026-05-18T14:00:00.000Z",
+        "status": "available"
+      },
+      {
+        "id": "bpjs",
+        "name": "Kartu BPJS / Asuransi",
+        "description": "Kartu kepesertaan jaminan kesehatan aktif",
+        "required": true,
+        "file_name": "sample-bpjs.jpg",
+        "file_size": "62.3 KB",
+        "uploaded_at": "2026-05-18T14:01:00.000Z",
+        "status": "available"
+      },
+      {
+        "id": "rujukan",
+        "name": "Surat Rujukan",
+        "description": "Surat rujukan dari Faskes 1 (Puskesmas/Klinik) ke Rumah Sakit",
+        "required": false,
+        "file_name": null,
+        "file_size": null,
+        "uploaded_at": null,
+        "status": "missing"
+      },
+      {
+        "id": "spri",
+        "name": "Surat Perintah Rawat Inap (SPRI)",
+        "description": "Surat perintah rawat inap dari poliklinik spesialis",
+        "required": true,
+        "file_name": "markdown-preview.pdf",
+        "file_size": "3.47 MB",
+        "uploaded_at": "2026-05-18T14:10:00.000Z",
+        "status": "available"
+      },
+      {
+        "id": "resume_medis",
+        "name": "Resume Medis Terdahulu",
+        "description": "Ringkasan riwayat medis pasien sebelumnya yang relevan",
+        "required": false,
+        "file_name": null,
+        "file_size": null,
+        "uploaded_at": null,
+        "status": "missing"
+      }
+    ]
   }
 }

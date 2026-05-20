@@ -1,3 +1,5 @@
+import type { SupportingDocument } from './clinical-pathway'
+
 export interface AiClinicalPathwayDayPlan {
   day: string
   focus: string
@@ -51,6 +53,7 @@ export interface AiValidationDashboard {
   expectedLos?: number
   quickFindings: string[]
   validatedItems: AiValidatedClinicalItem[]
+  documentVerification?: SupportingDocument[]
 }
 
 export interface AiClinicalPathwayBrainOutput {

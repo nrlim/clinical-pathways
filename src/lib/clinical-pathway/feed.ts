@@ -40,6 +40,7 @@ export async function buildAiSummaryFeed(
     medications: form.medications,
     inpatient: form.inpatient,
     outcome: form.outcome,
+    documents: form.documents,
     masterDataSnapshot: masterData,
     masterDataValidation,
     thresholds,

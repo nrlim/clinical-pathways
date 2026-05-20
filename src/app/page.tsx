@@ -5,6 +5,7 @@ import { FileText, FolderOpen, Database, ChevronLeft, ChevronRight, Download, Za
 import { PatientSectionForm, EncounterSectionForm } from '@/components/pathway/PatientEncounterSections'
 import { DiagnosisSectionForm, ProcedureSectionForm, MedicationSectionForm, InpatientJustificationForm } from '@/components/pathway/ClinicalSections'
 import { AiClinicalPathwayReport, OutcomeSectionForm, SummaryPanel, AiValidationBoard } from '@/components/pathway/OutcomeSummary'
+import { DocumentSectionForm } from '@/components/pathway/DocumentSectionForm'
 import { MasterDataPanel } from '@/components/master-data/MasterDataPanel'
 import { SettingsForm } from '@/components/settings/SettingsForm'
 import { WorkflowProgressTracker, WorkflowBubble } from '@/components/workflow/WorkflowProgressTracker'
@@ -44,11 +45,12 @@ interface ClinicalPathwayRecordDetail extends ClinicalPathwayRecordListItem {
 const STEPS = [
   { id: 1, label: 'Identitas', sublabel: 'Data Pasien' },
   { id: 2, label: 'Encounter', sublabel: 'Episode Rawat' },
-  { id: 3, label: 'Diagnosis', sublabel: 'ICD-10' },
-  { id: 4, label: 'Tindakan', sublabel: 'Prosedur' },
-  { id: 5, label: 'Obat', sublabel: 'Medikasi' },
-  { id: 6, label: 'Rawat Inap', sublabel: 'Justifikasi' },
-  { id: 7, label: 'Outcome', sublabel: 'Catatan Klinis' },
+  { id: 3, label: 'Dokumen', sublabel: 'Berkas Pendukung' },
+  { id: 4, label: 'Diagnosis', sublabel: 'ICD-10' },
+  { id: 5, label: 'Tindakan', sublabel: 'Prosedur' },
+  { id: 6, label: 'Obat', sublabel: 'Medikasi' },
+  { id: 7, label: 'Rawat Inap', sublabel: 'Justifikasi' },
+  { id: 8, label: 'Outcome', sublabel: 'Catatan Klinis' },
 ]
 
 const INITIAL: ClinicalPathwayForm = {
@@ -62,6 +64,13 @@ const INITIAL: ClinicalPathwayForm = {
     bed_number: '', practitioner_name: '', dpjp_number: '',
     referring_facility: '', expected_los: '',
   },
+  documents: [
+    { id: 'ktp', name: 'KTP / NIK', description: 'Kartu Tanda Penduduk pasien untuk verifikasi identitas resmi', required: true, file_name: null, file_size: null, uploaded_at: null, status: 'missing' },
+    { id: 'bpjs', name: 'Kartu BPJS / Asuransi', description: 'Kartu kepesertaan jaminan kesehatan aktif', required: true, file_name: null, file_size: null, uploaded_at: null, status: 'missing' },
+    { id: 'rujukan', name: 'Surat Rujukan', description: 'Surat rujukan dari Faskes 1 (Puskesmas/Klinik) ke Rumah Sakit', required: false, file_name: null, file_size: null, uploaded_at: null, status: 'missing' },
+    { id: 'spri', name: 'Surat Perintah Rawat Inap (SPRI)', description: 'Surat perintah rawat inap dari poliklinik spesialis', required: true, file_name: null, file_size: null, uploaded_at: null, status: 'missing' },
+    { id: 'resume_medis', name: 'Resume Medis Terdahulu', description: 'Ringkasan riwayat medis pasien sebelumnya yang relevan', required: false, file_name: null, file_size: null, uploaded_at: null, status: 'missing' },
+  ],
   diagnosis: {
     primary_diagnosis_code: '', primary_diagnosis_name: '',
     secondary_diagnoses: [], severity: '', comorbidities: '',
@@ -614,7 +623,7 @@ export default function ClinicalPathwayPage() {
                   </nav>
 
                   {/* Step content */}
-                  <form id="pathway-form" onSubmit={e => { e.preventDefault(); if (step < 7) setStep(s => s + 1) }}>
+                  <form id="pathway-form" onSubmit={e => { e.preventDefault(); if (step < 8) setStep(s => s + 1) }}>
                     {step === 1 && (
                       <PatientSectionForm
                         data={form.patient}
@@ -628,30 +637,36 @@ export default function ClinicalPathwayPage() {
                       />
                     )}
                     {step === 3 && (
+                      <DocumentSectionForm
+                        items={form.documents}
+                        onChange={items => setForm(p => ({ ...p, documents: items }))}
+                      />
+                    )}
+                    {step === 4 && (
                       <DiagnosisSectionForm
                         data={form.diagnosis}
                         onChange={(f, v) => updateSection('diagnosis', f, v)}
                       />
                     )}
-                    {step === 4 && (
+                    {step === 5 && (
                       <ProcedureSectionForm
                         items={form.procedures}
                         onChange={items => setForm(p => ({ ...p, procedures: items }))}
                       />
                     )}
-                    {step === 5 && (
+                    {step === 6 && (
                       <MedicationSectionForm
                         items={form.medications}
                         onChange={items => setForm(p => ({ ...p, medications: items }))}
                       />
                     )}
-                    {step === 6 && (
+                    {step === 7 && (
                       <InpatientJustificationForm
                         data={form.inpatient}
                         onChange={(f, v) => updateSection('inpatient', f, v)}
                       />
                     )}
-                    {step === 7 && (
+                    {step === 8 && (
                       <OutcomeSectionForm
                         data={form.outcome}
                         onChange={(f, v) => updateSection('outcome', f, v)}
@@ -663,12 +678,12 @@ export default function ClinicalPathwayPage() {
                 {/* Navigation bar — direct child of main for proper sticky bottom */}
                 <div className="form-nav">
                   <button type="button" className="btn btn-ghost"
-                    onClick={() => setStep(s => Math.max(1, s - 1))}
-                    disabled={step === 1}>
+                     onClick={() => setStep(s => Math.max(1, s - 1))}
+                     disabled={step === 1}>
                     ← Sebelumnya
                   </button>
                   <span className="step-indicator">Langkah {step} dari {STEPS.length}</span>
-                  {step < 7 ? (
+                  {step < 8 ? (
                     <button type="submit" form="pathway-form" className="btn btn-primary">
                       Selanjutnya
                     </button>

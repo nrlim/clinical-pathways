@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { SectionHeader } from '@/components/ui/PathwayPrimitives'
 import { BrainCircuit, ClipboardCheck, AlertTriangle, Stethoscope, Activity, Pill, BarChart2, CheckCircle2, DollarSign, CalendarDays, ShieldCheck, FileWarning, Database, Info } from 'lucide-react'
 import { formatRupiah } from '@/lib/pathway-utils'
-import type { OutcomeSection, PathwaySummary, AiSummaryFeed } from '@/types/clinical-pathway'
+import type { OutcomeSection, PathwaySummary, AiSummaryFeed, SupportingDocument } from '@/types/clinical-pathway'
 import type { AiClinicalPathwayBrainOutput, AiValidationStatus } from '@/types/ai-clinical-pathway'
 
 // ─── Section 7: Outcome ────────────────────────────────────
@@ -359,6 +359,100 @@ export function SummaryPanel({
           )}
         </div>
       </div>
+
+      {/* ── ZONE 4: Validasi Berkas & Dokumen Pendukung ── */}
+      <div style={{ marginTop: 'var(--space-6)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-5)' }}>
+        <p style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>
+          Validasi Berkas &amp; Dokumen Pendukung
+        </p>
+        
+        {/* Document list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          {(db?.documentVerification || aiFeed?.documents || []).map((doc) => {
+            const hasFile = doc.file_name && doc.file_name.trim().length > 0
+            
+            // Check status styling
+            let statusBadgeClass = 'review'
+            let statusLabel = 'Belum Diunggah'
+            if (hasFile) {
+              if (doc.verification_status === 'valid') {
+                statusBadgeClass = 'sesuai'
+                statusLabel = 'Valid (AI)'
+              } else if (doc.verification_status === 'invalid') {
+                statusBadgeClass = 'tidak'
+                statusLabel = 'Tidak Valid (AI)'
+              } else {
+                statusBadgeClass = 'sesuai'
+                statusLabel = 'Terunggah'
+              }
+            } else {
+              if (doc.required) {
+                statusBadgeClass = 'tidak'
+                statusLabel = 'Wajib & Hilang (-15)'
+              } else {
+                statusBadgeClass = 'review'
+                statusLabel = 'Opsional'
+              }
+            }
+
+            return (
+              <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px var(--space-4)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {doc.name} {doc.required && <span style={{ color: 'var(--color-danger-500)', fontSize: '0.75rem', fontWeight: 600 }}>(Wajib)</span>}
+                  </span>
+                  {hasFile ? (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '200px' }} title={doc.file_name ?? undefined}>
+                      📄 {doc.file_name}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-danger-400)', fontWeight: 500 }}>
+                      ⚠️ File belum diunggah
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
+                  <span className={`conformance-badge ${statusBadgeClass}`} style={{ fontSize: '0.72rem', padding: '2px 8px' }}>
+                    {statusLabel}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Penalty details */}
+        {hasAi && db && db.documentVerification && (() => {
+          const missingCount = db.documentVerification.filter(d => d.required && (!d.file_name || d.file_name.trim().length === 0)).length
+          const invalidCount = db.documentVerification.filter(d => d.verification_status === 'invalid').length
+          const totalPenalties = (missingCount + invalidCount) * 15
+
+          if (totalPenalties > 0) {
+            return (
+              <div style={{
+                marginTop: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 14px',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                color: 'var(--color-danger-600)'
+              }}>
+                <AlertTriangle size={15} />
+                <span>Pinalti Kelengkapan Berkas: </span>
+                <strong style={{ fontSize: '0.85rem' }}>-{totalPenalties} Poin</strong>
+                <span style={{ fontSize: '0.75rem', opacity: 0.75, marginLeft: '4px' }}>(Terdiri dari {missingCount} berkas wajib hilang &amp; {invalidCount} berkas tidak valid)</span>
+              </div>
+            )
+          }
+          return null
+        })()}
+      </div>
     </div>
   )
 }
@@ -443,7 +537,7 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
       <div>
         <SectionLabel icon="📅" text="Clinical Pathway — Day-by-Day Timeline" desc="Alur perawatan klinis berurutan berdasarkan standar dan kondisi pasien." />
         <div className="ai-timeline">
-          {result.dayByDayPlan
+          {(result.dayByDayPlan || [])
             .filter((plan) =>
               (plan.assessments?.length ?? 0) > 0 ||
               (plan.interventions?.length ?? 0) > 0 ||
@@ -474,7 +568,7 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
           <SectionLabel icon="⚠️" text="Peta Risiko Klinis" />
           <div className="risk-lane">
-            {result.riskStratification.map((risk, i) => (
+            {(result.riskStratification || []).map((risk, i) => (
               <div key={i} className={`risk-tile ${risk.level}`}>
                 <div className="risk-level">{risk.level}</div>
                 <strong>{risk.issue}</strong>
@@ -487,7 +581,7 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
           <SectionLabel icon="📊" text="Varians Pathway" />
           <div className="variance-map">
-            {result.pathwayVariances.map((variance, i) => (
+            {(result.pathwayVariances || []).map((variance, i) => (
               <div key={i} className="variance-node">
                 <div className="variance-area">{variance.area}</div>
                 <strong>{variance.observedVariance}</strong>
@@ -495,7 +589,7 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
                 <span>Tindak Lanjut: {variance.recommendedFollowUp}</span>
               </div>
             ))}
-            {result.pathwayVariances.length === 0 && (
+            {(result.pathwayVariances || []).length === 0 && (
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: 'var(--space-6)' }}>Tidak terdeteksi deviasi dari jalur pathway standar.</p>
             )}
           </div>
@@ -685,6 +779,62 @@ export function AiValidationBoard({ result }: { result: AiClinicalPathwayBrainOu
     </article>
   )
 
+  const renderDocCard = (doc: SupportingDocument) => {
+    const hasFile = doc.file_name && doc.file_name.trim().length > 0
+    let statusClass: 'sesuai' | 'tidak_sesuai' | 'perlu_review' = 'perlu_review'
+    let statusBadgeText = 'Belum Diunggah'
+
+    if (hasFile) {
+      if (doc.verification_status === 'valid') {
+        statusClass = 'sesuai'
+        statusBadgeText = 'Valid'
+      } else if (doc.verification_status === 'invalid') {
+        statusClass = 'tidak_sesuai'
+        statusBadgeText = 'Tidak Valid'
+      } else {
+        statusClass = 'sesuai'
+        statusBadgeText = 'Terunggah'
+      }
+    } else {
+      if (doc.required) {
+        statusClass = 'tidak_sesuai'
+        statusBadgeText = 'Hilang (-15)'
+      } else {
+        statusClass = 'perlu_review'
+        statusBadgeText = 'Opsional'
+      }
+    }
+
+    const borderTopColor = statusClass === 'sesuai'
+      ? 'var(--color-success-500)'
+      : statusClass === 'tidak_sesuai'
+        ? 'var(--color-danger-500)'
+        : 'var(--color-warning-500)'
+
+    return (
+      <article key={doc.id} className={`validation-item ${statusClass}`} style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderTop: `3px solid ${borderTopColor}`, borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        <div className="validation-item-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span className="validation-type" style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>
+            {doc.required ? 'Berkas Wajib' : 'Berkas Opsional'}
+          </span>
+          <span className={`validation-status ${statusClass}`} style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}>
+            {statusBadgeText}
+          </span>
+        </div>
+        <h5 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+          {doc.name}
+        </h5>
+        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>ID: {doc.id}</div>
+        
+        <div style={{ fontSize: '0.74rem', display: 'flex', flexDirection: 'column', gap: '4px', background: 'var(--bg-surface)', padding: '8px', borderRadius: 'var(--radius-sm)', marginTop: '4px' }}>
+          <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>File:</strong> {hasFile ? doc.file_name : '—'}</p>
+          {doc.file_size && <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>Ukuran:</strong> {doc.file_size}</p>}
+          <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>Hasil AI:</strong> {doc.verification_note || 'Belum dianalisis oleh AI'}</p>
+        </div>
+      </article>
+    )
+  }
+
   return (
     <div className="ai-report-section validation-board" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
       <div className="validation-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)' }}>
@@ -720,10 +870,19 @@ export function AiValidationBoard({ result }: { result: AiClinicalPathwayBrainOu
       )}
 
       {medications.length > 0 && (
-        <div>
+        <div style={{ marginBottom: dashboard.documentVerification && dashboard.documentVerification.length > 0 ? 'var(--space-6)' : 0 }}>
           <h5 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>Evaluasi Obat / Medikasi</h5>
           <div className="validation-item-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
             {medications.map(renderItemCard)}
+          </div>
+        </div>
+      )}
+
+      {dashboard.documentVerification && dashboard.documentVerification.length > 0 && (
+        <div style={{ borderTop: '1px dashed var(--border-subtle)', paddingTop: 'var(--space-5)', marginTop: 'var(--space-5)' }}>
+          <h5 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>Evaluasi Kelengkapan &amp; Validitas Dokumen Pendukung</h5>
+          <div className="validation-item-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
+            {dashboard.documentVerification.map(renderDocCard)}
           </div>
         </div>
       )}

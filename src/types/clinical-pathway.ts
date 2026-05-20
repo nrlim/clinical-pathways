@@ -105,6 +105,24 @@ export interface OutcomeSection {
   pathway_variance: string      // Varians dari pathway standar
 }
 
+// ─── Section 8: Supporting Documents ───────────────────────
+export interface SupportingDocument {
+  id: string
+  name: string
+  description: string
+  required: boolean
+  file_name: string | null
+  file_size: string | null
+  uploaded_at: string | null
+  status: 'available' | 'missing'
+  verification_status?: 'valid' | 'invalid' | 'unchecked'
+  verification_note?: string
+  /** Path of the file inside the Supabase Storage bucket (e.g. documents/ktp/1234_ktp.pdf) */
+  storage_path?: string
+  /** Public CDN URL of the file returned by Supabase Storage */
+  public_url?: string
+}
+
 // ─── Root Form State ───────────────────────────────────────
 export interface ClinicalPathwayForm {
   patient: PatientSection
@@ -114,6 +132,7 @@ export interface ClinicalPathwayForm {
   medications: MedicationItem[]
   inpatient: InpatientJustification
   outcome: OutcomeSection
+  documents: SupportingDocument[]
 }
 
 // ─── Computed Summary ──────────────────────────────────────
@@ -165,6 +184,7 @@ export interface AiSummaryFeed {
   medications: ClinicalPathwayForm['medications']
   inpatient: ClinicalPathwayForm['inpatient']
   outcome: ClinicalPathwayForm['outcome']
+  documents?: SupportingDocument[]
   masterDataSnapshot: ClinicalMasterData
   /**
    * Pre-computed cross-check results from local master data catalog.
