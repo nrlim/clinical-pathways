@@ -12,7 +12,7 @@ export async function generateClinicalPathwayBrain(feed: AiSummaryFeed): Promise
   const aiResult = await callAi({
     temperature: 0.1,
     maxTokens: 8000,
-    budgetTokens: 1500,
+    budgetTokens: 2500,
     messages: [
       { role: 'system', content: buildSystemPrompt() },
       { role: 'user', content: buildUserPrompt(feed) },
@@ -162,14 +162,36 @@ function calculateActualLos(admissionDate: string, dischargeDate: string): numbe
 }
 
 async function parseBrainOutput(rawText: string, feed: AiSummaryFeed): Promise<AiClinicalPathwayBrainOutput> {
-  const cleaned = cleanJsonCandidate(rawText)
-
   let parsed: AiClinicalPathwayBrainOutput | any
+
   try {
-    parsed = JSON.parse(cleaned)
+    parsed = tryParseJson(rawText)
   } catch (firstError) {
-    const repaired = await repairBrainJson(cleaned, firstError)
-    parsed = JSON.parse(cleanJsonCandidate(repaired))
+    try {
+      const repaired = await repairBrainJson(rawText, firstError)
+      parsed = tryParseJson(repaired)
+    } catch (secondError) {
+      console.error('[AI Router] Fatal JSON parse error even after repair:', secondError)
+      // Ultimate fallback to prevent workflow crash
+      parsed = {
+        executiveSummary: "Gagal memproses respons AI karena keterbatasan token atau error format.",
+        clinicalSynopsis: "",
+        workingAssessment: "",
+        pathwayName: "Error Processing Pathway",
+        careGoals: [],
+        validationDashboard: {
+          overallStatus: 'data_kurang',
+          score: 0,
+          passedCount: 0,
+          reviewCount: 0,
+          failedCount: 0,
+          totalFlaggedCost: 0,
+          quickFindings: ["Respons AI terpotong dan tidak dapat diperbaiki secara otomatis."],
+          validatedItems: [],
+          documentVerification: []
+        }
+      }
+    }
   }
 
   // --- WORKAROUND FOR AI NESTING HALLUCINATION ---
@@ -282,7 +304,7 @@ function enforceMasterDataValidation(
         verification_status = 'unchecked'
         verification_note = 'Dokumen wajib ini belum diunggah.'
         docDeterministicIssues.push(`DOKUMEN PENDUKUNG HILANG: Dokumen wajib ${doc.name} tidak diunggah.`)
-        docQuickFindings.push(`Dokumen wajib ${doc.name} tidak diunggah (-15 poin).`)
+        docQuickFindings.push(`Dokumen wajib ${doc.name} tidak diunggah (Status: Perlu Review).`)
       } else {
         verification_status = 'unchecked'
         verification_note = 'Dokumen opsional belum diunggah.'
@@ -296,7 +318,7 @@ function enforceMasterDataValidation(
       if (verification_status === 'invalid') {
         invalidCount++
         docDeterministicIssues.push(`DOKUMEN TIDAK VALID: Dokumen ${doc.name} dinyatakan tidak valid oleh AI: ${verification_note}`)
-        docQuickFindings.push(`Dokumen ${doc.name} dinyatakan TIDAK VALID oleh AI (-15 poin).`)
+        docQuickFindings.push(`Dokumen ${doc.name} dinyatakan TIDAK VALID oleh AI (Status: Tidak Sesuai).`)
       }
     }
 
@@ -309,8 +331,8 @@ function enforceMasterDataValidation(
   })
 
   const baseScore = totalChecked > 0 ? Math.max(0, Math.round((passedCount / totalChecked) * 100)) : 100
-  const penalties = (missingRequiredCount + invalidCount) * 15
-  const score = Math.max(0, baseScore - penalties)
+  // Opsi B: Skor murni klinis, tidak ada pemotongan penalti poin dari dokumen
+  const score = baseScore
 
   let overallStatus = getOverallStatus({ totalChecked, reviewCount, failedCount })
   if (invalidCount > 0) {
@@ -622,22 +644,41 @@ function mergeUnique(items: string[]): string[] {
   return [...new Set(items.filter((item) => item.trim().length > 0))]
 }
 
-function cleanJsonCandidate(rawText: string): string {
-  const withoutFence = rawText
+function tryParseJson(rawText: string): any {
+  let base = rawText
     .trim()
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
     .replace(/```$/i, '')
     .trim()
 
-  const firstBrace = withoutFence.indexOf('{')
-  const lastBrace = withoutFence.lastIndexOf('}')
+  const firstBrace = base.indexOf('{')
+  if (firstBrace >= 0) base = base.slice(firstBrace)
 
-  if (firstBrace >= 0 && lastBrace > firstBrace) {
-    return withoutFence.slice(firstBrace, lastBrace + 1)
+  // 1. Try normal parse with finding last brace
+  const lastBrace = base.lastIndexOf('}')
+  if (lastBrace > 0) {
+    try { return JSON.parse(base.slice(0, lastBrace + 1)) } catch (e) { }
   }
 
-  return withoutFence
+  // 2. Try raw parse
+  try { return JSON.parse(base) } catch (e) { }
+
+  // 3. Brute force bracket closing for truncated JSON
+  const endings = ['}', ']}', '}]}', '}}', '}}}', ']', '"]}', '"}', '"]}]}', '""}']
+  for (const suffix of endings) {
+    try { return JSON.parse(base + suffix) } catch (e) { }
+  }
+
+  // 4. Try removing trailing comma
+  if (base.endsWith(',')) {
+    const stripped = base.slice(0, -1)
+    for (const suffix of endings) {
+      try { return JSON.parse(stripped + suffix) } catch (e) { }
+    }
+  }
+
+  throw new Error('Unparseable JSON')
 }
 
 async function repairBrainJson(rawJson: string, parseError: unknown): Promise<string> {
