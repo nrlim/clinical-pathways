@@ -25,6 +25,8 @@ model ClinicalPathwaySummary {
   aiFeed               Json
   brainResult          Json
   rawText              String?
+  workflowRunId        String?  // Track workflow run ID from Workflow SDK
+  workflowStatus       String?  // "running" | "completed" | "failed"
   generatedAt          DateTime
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt

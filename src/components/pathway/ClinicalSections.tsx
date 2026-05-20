@@ -71,17 +71,22 @@ export function DiagnosisSectionForm({
 
       {/* Secondary Diagnoses */}
       <div style={{ marginTop: 'var(--space-6)' }}>
-        <label className="form-label" style={{ display: 'block', marginBottom: 'var(--space-3)' }}>
+        <label className="form-label" style={{ display: 'block', marginBottom: 'var(--space-4)', fontWeight: 600, color: 'var(--text-primary)' }}>
           Diagnosis Sekunder
         </label>
-        {data.secondary_diagnoses.map((dx) => (
-          <div key={dx.id} style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-3)', alignItems: 'center' }}>
-            <input className="form-input" style={{ width: '130px', flexShrink: 0 }}
-              placeholder="Kode ICD-10" value={dx.code}
-              onChange={e => updateSecondary(dx.id, 'code', e.target.value)} />
-            <input className="form-input" placeholder="Nama diagnosis sekunder" value={dx.name}
-              onChange={e => updateSecondary(dx.id, 'name', e.target.value)} />
-            <button type="button" className="delete-row-btn" onClick={() => removeSecondary(dx.id)}
+        {data.secondary_diagnoses.map((dx, idx) => (
+          <div key={dx.id} style={{ display: 'grid', gridTemplateColumns: '140px 1fr auto', gap: 'var(--space-3)', marginBottom: 'var(--space-3)', alignItems: 'end' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: 'var(--space-1)', display: 'block' }}>Kode ICD-10 #{idx + 1}</label>
+              <input className="form-input" placeholder="e.g. I10" value={dx.code}
+                onChange={e => updateSecondary(dx.id, 'code', e.target.value)} />
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: 'var(--space-1)', display: 'block' }}>Nama Diagnosis Sekunder #{idx + 1}</label>
+              <input className="form-input" placeholder="e.g. Essential (primary) hypertension" value={dx.name}
+                onChange={e => updateSecondary(dx.id, 'name', e.target.value)} />
+            </div>
+            <button type="button" className="delete-row-btn" style={{ height: '38px', width: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-md)' }} onClick={() => removeSecondary(dx.id)}
               aria-label="Hapus diagnosis sekunder">✕</button>
           </div>
         ))}

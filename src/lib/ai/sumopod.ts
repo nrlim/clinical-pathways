@@ -28,6 +28,8 @@ export interface SumoPodCompletionInput {
   messages: SumoPodChatMessage[]
   temperature?: number
   maxTokens?: number
+  /** For Kimi/reasoning models: cap the thinking budget in tokens (e.g. 2048). Lower = faster. */
+  budgetTokens?: number
 }
 
 const DEFAULT_SUMOPOD_BASE_URL = 'https://ai.sumopod.com/v1'
@@ -97,6 +99,12 @@ async function requestSumoPodCompletion(
     messages: input.messages,
     max_tokens: input.maxTokens ?? 3500,
     temperature: input.temperature ?? 0.25,
+  }
+
+  // Kimi-k2 / reasoning models: cap internal thinking budget for faster responses.
+  // budget_tokens limits how many tokens the model can use for its internal CoT.
+  if (input.budgetTokens != null && input.budgetTokens > 0) {
+    body.budget_tokens = input.budgetTokens
   }
 
   if (jsonMode) {

@@ -1,6 +1,7 @@
 'use client'
 
 import { SectionHeader } from '@/components/ui/PathwayPrimitives'
+import { BrainCircuit, ClipboardCheck, AlertTriangle, Stethoscope, Activity, Pill, BarChart2, CheckCircle2, DollarSign, CalendarDays, ShieldCheck, FileWarning } from 'lucide-react'
 import { formatRupiah } from '@/lib/pathway-utils'
 import type { OutcomeSection, PathwaySummary } from '@/types/clinical-pathway'
 import type { AiClinicalPathwayBrainOutput, AiValidationStatus } from '@/types/ai-clinical-pathway'
@@ -74,6 +75,70 @@ export function OutcomeSectionForm({
   )
 }
 
+// ─── Score Donut SVG Gauge ──────────────────────────────────
+export function ScoreCircularGauge({ score, size = 120 }: { score: number; size?: number }) {
+  const strokeWidth = size * 0.08
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (score / 100) * circumference
+  
+  let color = 'var(--color-primary-500)'
+  let glow = 'rgba(20, 184, 166, 0.25)'
+  if (score < 50) {
+    color = 'var(--color-danger-500)'
+    glow = 'rgba(239, 68, 68, 0.25)'
+  } else if (score < 80) {
+    color = 'var(--color-warning-500)'
+    glow = 'rgba(245, 158, 11, 0.25)'
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', width: `${size}px`, height: `${size}px`, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', filter: `drop-shadow(0 4px 6px ${glow})` }}>
+        {/* Background Track */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="transparent"
+          stroke="rgba(255, 255, 255, 0.08)"
+          strokeWidth={strokeWidth}
+        />
+        {/* Foreground Indicator */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="transparent"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
+        />
+      </svg>
+      <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: `${size * 0.23}px`, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{score}</span>
+        <span style={{ fontSize: `${size * 0.08}px`, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>Score</span>
+      </div>
+    </div>
+  )
+}
+
+// ─── ConformanceRow helper ──────────────────────────────────
+function ConformanceRow({ label, value, badge, badgeLabel }: { label: string; value: string; badge: string; badgeLabel: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px var(--space-4)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
+      <span style={{ fontSize: '0.88rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
+        {value && <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{value}</span>}
+        <span className={`conformance-badge ${badge}`}>{badgeLabel}</span>
+      </div>
+    </div>
+  )
+}
+
 // ─── Summary Panel ─────────────────────────────────────────
 export function SummaryPanel({
   summary,
@@ -105,7 +170,7 @@ export function SummaryPanel({
   const aiPassRate = totalItems > 0 ? Math.round((db!.passedCount / totalItems) * 100) : 0
 
   return (
-    <div className="form-card" style={{ background: 'var(--bg-elevated)' }}>
+    <div className="form-card" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}>
       <SectionHeader icon="SM" iconColor="blue"
         title="Ringkasan Clinical Pathway"
         desc={
@@ -119,185 +184,114 @@ export function SummaryPanel({
       <div style={{ marginBottom: 'var(--space-5)' }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)',
-          background: hasAi ? 'var(--color-primary-50)' : 'var(--color-neutral-100)',
-          border: `1px solid ${hasAi ? 'var(--color-primary-100)' : 'var(--border-subtle)'}`,
+          background: hasAi ? 'rgba(20, 184, 166, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+          border: `1px solid ${hasAi ? 'var(--color-primary-500)' : 'var(--border-subtle)'}`,
           borderRadius: 'var(--radius-full)',
-          color: hasAi ? 'var(--color-primary-700)' : 'var(--text-muted)',
-          fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px',
+          color: hasAi ? 'var(--color-primary-500)' : 'var(--text-secondary)',
+          fontSize: '0.75rem', fontWeight: 700, padding: '3px 12px',
         }}>
-          {hasAi ? '🧠 Data dari Brain AI' : '📋 Data dari Input Form'}
+          {hasAi ? <><BrainCircuit size={14} /> Data dari Brain AI</> : <><ClipboardCheck size={14} /> Data dari Input Form</>}
         </span>
       </div>
 
-      {/* Cost + LOS stats */}
-      <div className="summary-grid" style={{ marginBottom: 'var(--space-6)' }}>
-        <div className="summary-card">
-          <div className="summary-value">{formatRupiah(summary.totalProcedureCost)}</div>
-          <div className="summary-label">Total Biaya Tindakan</div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-value">{formatRupiah(summary.totalMedicationCost)}</div>
-          <div className="summary-label">Total Biaya Obat</div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-value">{formatRupiah(summary.totalCost)}</div>
-          <div className="summary-label">Total Biaya Episode</div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-value">
-            {summary.actualLOS !== null ? `${summary.actualLOS} hari` : '—'}
-          </div>
-          <div className="summary-label">Aktual LOS</div>
-        </div>
-
-        {/* AI-derived or form-computed validation counts */}
-        {hasAi && db ? (
-          <>
-            <div className="summary-card" style={{ borderColor: 'var(--color-success-500)' }}>
-              <div className="summary-value" style={{ color: 'var(--color-success-500)' }}>{db.passedCount}</div>
-              <div className="summary-label">Item Sesuai (AI)</div>
-            </div>
-            <div className="summary-card" style={{ borderColor: db.failedCount > 0 ? 'var(--color-danger-500)' : 'var(--color-warning-500)' }}>
-              <div className="summary-value" style={{ color: db.failedCount > 0 ? 'var(--color-danger-500)' : 'var(--color-warning-500)' }}>
-                {db.reviewCount + db.failedCount}
-              </div>
-              <div className="summary-label">Perlu Review / Tidak Sesuai</div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="summary-card">
-              <div className="summary-value">{summary.procedureConformanceRate}%</div>
-              <div className="summary-label">Kesesuaian Tindakan</div>
-            </div>
-            <div className="summary-card">
-              <div className="summary-value">{summary.medicationConformanceRate}%</div>
-              <div className="summary-label">Kesesuaian Obat</div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* AI Validation Score bar */}
+      {/* ── ZONE 1: Hero Score Banner (only when AI data exists) ── */}
       {hasAi && db && (
         <div style={{
-          background: 'var(--bg-base)', border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', marginBottom: 'var(--space-5)',
+          display: 'grid',
+          gridTemplateColumns: '180px 1fr',
+          gap: 'var(--space-6)',
+          background: 'linear-gradient(135deg, var(--bg-base) 0%, rgba(20,184,166,0.04) 100%)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 'var(--space-5)',
+          marginBottom: 'var(--space-6)',
+          alignItems: 'center',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Validation Score Brain AI</span>
-            <span style={{
-              fontSize: '1.25rem', fontWeight: 700,
-              color: db.score >= 80 ? 'var(--color-success-500)' : db.score >= 50 ? 'var(--color-warning-500)' : 'var(--color-danger-500)',
-            }}>{db.score} / 100</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <ScoreCircularGauge score={db.score} size={110} />
+            <span className={`status-badge ${aiStatusBadge[db.overallStatus]}`} style={{ fontSize: '0.75rem', padding: '4px 14px' }}>
+              {aiStatusLabel[db.overallStatus]}
+            </span>
           </div>
-          <div style={{ background: 'var(--color-neutral-200)', borderRadius: 'var(--radius-full)', height: '10px', overflow: 'hidden' }}>
-            <div style={{
-              width: `${Math.max(0, Math.min(100, db.score))}%`,
-              background: db.score >= 80
-                ? 'linear-gradient(90deg, var(--color-success-500), var(--color-primary-500))'
-                : db.score >= 50
-                ? 'linear-gradient(90deg, var(--color-warning-500), var(--color-accent-400))'
-                : 'linear-gradient(90deg, var(--color-danger-500), var(--color-accent-400))',
-              borderRadius: 'inherit', height: '100%',
-              transition: 'width 600ms ease',
-            }} />
-          </div>
-          {db.totalFlaggedCost > 0 && (
-            <div style={{ marginTop: 'var(--space-3)', fontSize: '0.82rem', color: 'var(--color-danger-500)', fontWeight: 600 }}>
-              ⚠ {formatRupiah(db.totalFlaggedCost)} perlu ditinjau (item tidak sesuai / perlu review)
+          <div>
+            <p style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '6px' }}>Validation Score Brain AI</p>
+            <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '10px' }}>
+              {db.score}<span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-muted)' }}>/100</span>
             </div>
-          )}
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '10px' }}>
+              {db.passedCount} dari {totalItems} item lolos validasi AI. Akurasi kesesuaian: <strong style={{ color: 'var(--text-primary)' }}>{aiPassRate}%</strong>.
+            </p>
+            {db.totalFlaggedCost > 0 && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-md)', padding: '5px 12px', fontSize: '0.82rem', color: 'var(--color-danger-500)', fontWeight: 700 }}>
+                <AlertTriangle size={14} /> {formatRupiah(db.totalFlaggedCost)} perlu ditinjau
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Conformance breakdown */}
-      <div style={{ marginBottom: 'var(--space-2)' }}>
-        <label className="form-label" style={{ display: 'block', marginBottom: 'var(--space-4)' }}>
-          Evaluasi Kesesuaian
-          {hasAi && <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 6 }}>(dari validasi AI per item)</span>}
-        </label>
-        <div className="conformance-breakdown">
+      {/* ── ZONE 2: Cost & LOS KPIs — fixed 4-column strip ── */}
+      <div style={{ marginBottom: 'var(--space-6)' }}>
+        <p style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>Ringkasan Biaya &amp; Durasi</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)' }}>
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+              <div style={{ width: '28px', height: '28px', background: 'rgba(99,102,241,0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1', flexShrink: 0 }}>
+                <Activity size={15} />
+              </div>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Tindakan</span>
+            </div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{formatRupiah(summary.totalProcedureCost)}</div>
+          </div>
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+              <div style={{ width: '28px', height: '28px', background: 'rgba(168,85,247,0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a855f7', flexShrink: 0 }}>
+                <Pill size={15} />
+              </div>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Obat</span>
+            </div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{formatRupiah(summary.totalMedicationCost)}</div>
+          </div>
+          <div style={{ background: 'linear-gradient(135deg, rgba(20,184,166,0.12), rgba(20,184,166,0.04))', border: '1px solid var(--color-primary-500)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+              <div style={{ width: '28px', height: '28px', background: 'rgba(20,184,166,0.15)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary-600)', flexShrink: 0 }}>
+                <DollarSign size={15} />
+              </div>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-primary-700)' }}>Total Episode</span>
+            </div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--color-primary-700)', lineHeight: 1 }}>{formatRupiah(summary.totalCost)}</div>
+          </div>
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+              <div style={{ width: '28px', height: '28px', background: 'rgba(245,158,11,0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706', flexShrink: 0 }}>
+                <CalendarDays size={15} />
+              </div>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Aktual LOS</span>
+            </div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
+              {summary.actualLOS !== null ? `${summary.actualLOS} hari` : '—'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── ZONE 3: Conformance Breakdown — clean checklist rows ── */}
+      <div>
+        <p style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>Evaluasi Kesesuaian Klinis</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {hasAi && db ? (
             <>
-              <div className="conformance-row">
-                <span className="conformance-row-label">Tindakan &amp; Obat sesuai diagnosa</span>
-                <div className="conformance-row-stat">
-                  <span>{db.passedCount} dari {totalItems} item</span>
-                  <span className={`conformance-badge ${conformance(aiPassRate)}`}>
-                    {aiPassRate}% {aiPassRate >= 80 ? 'Baik' : aiPassRate >= 50 ? 'Perlu Review' : 'Tidak Sesuai'}
-                  </span>
-                </div>
-              </div>
-              <div className="conformance-row">
-                <span className="conformance-row-label">Item perlu review</span>
-                <div className="conformance-row-stat">
-                  <span>{db.reviewCount} item</span>
-                  <span className={`conformance-badge ${db.reviewCount > 0 ? 'review' : 'sesuai'}`}>
-                    {db.reviewCount > 0 ? 'Ada Item Review' : 'Tidak Ada'}
-                  </span>
-                </div>
-              </div>
-              <div className="conformance-row">
-                <span className="conformance-row-label">Item tidak sesuai diagnosa</span>
-                <div className="conformance-row-stat">
-                  <span>{db.failedCount} item</span>
-                  <span className={`conformance-badge ${db.failedCount > 0 ? 'tidak' : 'sesuai'}`}>
-                    {db.failedCount > 0 ? 'Ada Ketidaksesuaian' : 'Tidak Ada'}
-                  </span>
-                </div>
-              </div>
-              <div className="conformance-row">
-                <span className="conformance-row-label">Status keseluruhan AI</span>
-                <div className="conformance-row-stat">
-                  <span className={`conformance-badge ${aiStatusBadge[db.overallStatus]}`}>
-                    {aiStatusLabel[db.overallStatus]}
-                  </span>
-                </div>
-              </div>
-              <div className="conformance-row">
-                <span className="conformance-row-label">Rawat inap sesuai indikasi</span>
-                <div className="conformance-row-stat">
-                  <span className={`conformance-badge ${summary.inpatientJustified === true ? 'sesuai' : summary.inpatientJustified === false ? 'tidak' : 'review'}`}>
-                    {summary.inpatientJustified === true ? 'Sesuai Indikasi'
-                      : summary.inpatientJustified === false ? 'Tidak Sesuai'
-                      : 'Belum Dinilai'}
-                  </span>
-                </div>
-              </div>
+              <ConformanceRow label="Tindakan & Obat sesuai diagnosa" value={`${db.passedCount} dari ${totalItems} item`} badge={aiPassRate >= 80 ? 'sesuai' : aiPassRate >= 50 ? 'review' : 'tidak'} badgeLabel={`${aiPassRate}% — ${aiPassRate >= 80 ? 'Baik' : aiPassRate >= 50 ? 'Perlu Review' : 'Tidak Sesuai'}`} />
+              <ConformanceRow label="Item perlu review" value={`${db.reviewCount} item`} badge={db.reviewCount > 0 ? 'review' : 'sesuai'} badgeLabel={db.reviewCount > 0 ? 'Ada Item Review' : 'Tidak Ada'} />
+              <ConformanceRow label="Item tidak sesuai diagnosa" value={`${db.failedCount} item`} badge={db.failedCount > 0 ? 'tidak' : 'sesuai'} badgeLabel={db.failedCount > 0 ? 'Ada Ketidaksesuaian' : 'Tidak Ada'} />
+              <ConformanceRow label="Status keseluruhan AI" value="" badge={aiStatusBadge[db.overallStatus]} badgeLabel={aiStatusLabel[db.overallStatus]} />
+              <ConformanceRow label="Rawat inap sesuai indikasi" value="" badge={summary.inpatientJustified === true ? 'sesuai' : summary.inpatientJustified === false ? 'tidak' : 'review'} badgeLabel={summary.inpatientJustified === true ? 'Sesuai Indikasi' : summary.inpatientJustified === false ? 'Tidak Sesuai' : 'Belum Dinilai'} />
             </>
           ) : (
             <>
-              <div className="conformance-row">
-                <span className="conformance-row-label">Tindakan sesuai diagnosa</span>
-                <div className="conformance-row-stat">
-                  <span>{summary.procedureConformanceRate}%</span>
-                  <span className={`conformance-badge ${conformance(summary.procedureConformanceRate)}`}>
-                    {summary.procedureConformanceRate >= 80 ? 'Baik'
-                      : summary.procedureConformanceRate >= 50 ? 'Perlu Review' : 'Tidak Sesuai'}
-                  </span>
-                </div>
-              </div>
-              <div className="conformance-row">
-                <span className="conformance-row-label">Obat sesuai diagnosa</span>
-                <div className="conformance-row-stat">
-                  <span>{summary.medicationConformanceRate}%</span>
-                  <span className={`conformance-badge ${conformance(summary.medicationConformanceRate)}`}>
-                    {summary.medicationConformanceRate >= 80 ? 'Baik'
-                      : summary.medicationConformanceRate >= 50 ? 'Perlu Review' : 'Tidak Sesuai'}
-                  </span>
-                </div>
-              </div>
-              <div className="conformance-row">
-                <span className="conformance-row-label">Rawat inap sesuai indikasi</span>
-                <div className="conformance-row-stat">
-                  <span className={`conformance-badge ${summary.inpatientJustified === true ? 'sesuai' : summary.inpatientJustified === false ? 'tidak' : 'review'}`}>
-                    {summary.inpatientJustified === true ? 'Sesuai Indikasi'
-                      : summary.inpatientJustified === false ? 'Tidak Sesuai'
-                      : 'Belum Dinilai'}
-                  </span>
-                </div>
-              </div>
+              <ConformanceRow label="Tindakan sesuai diagnosa" value={`${summary.procedureConformanceRate}%`} badge={conformance(summary.procedureConformanceRate)} badgeLabel={summary.procedureConformanceRate >= 80 ? 'Baik' : summary.procedureConformanceRate >= 50 ? 'Perlu Review' : 'Tidak Sesuai'} />
+              <ConformanceRow label="Obat sesuai diagnosa" value={`${summary.medicationConformanceRate}%`} badge={conformance(summary.medicationConformanceRate)} badgeLabel={summary.medicationConformanceRate >= 80 ? 'Baik' : summary.medicationConformanceRate >= 50 ? 'Perlu Review' : 'Tidak Sesuai'} />
+              <ConformanceRow label="Rawat inap sesuai indikasi" value="" badge={summary.inpatientJustified === true ? 'sesuai' : summary.inpatientJustified === false ? 'tidak' : 'review'} badgeLabel={summary.inpatientJustified === true ? 'Sesuai Indikasi' : summary.inpatientJustified === false ? 'Tidak Sesuai' : 'Belum Dinilai'} />
             </>
           )}
         </div>
@@ -306,51 +300,90 @@ export function SummaryPanel({
   )
 }
 
+// ─── SectionLabel: compact emoji + label, no font-size hierarchy abuse ─────
+function SectionLabel({ icon, text, desc, color }: { icon: string; text: string; desc?: string; color?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: 'var(--space-4)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '0.88rem', lineHeight: 1 }}>{icon}</span>
+        <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: color || 'var(--text-muted)' }}>{text}</span>
+      </div>
+      {desc && <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, paddingLeft: '24px' }}>{desc}</p>}
+    </div>
+  )
+}
+
+// ─── InfoBlock: list of items in a tinted bordered box ─────────────────────
+function InfoBlock({ title, items, accentColor, bgColor }: { title: string; items: string[]; accentColor: string; bgColor: string }) {
+  const safeItems = Array.isArray(items) ? items : []
+  return (
+    <div style={{ background: bgColor, border: `1px solid ${accentColor}30`, borderLeft: `3px solid ${accentColor}`, borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+      <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700, color: accentColor, marginBottom: '8px' }}>{title}</div>
+      {safeItems.length === 0
+        ? <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>—</p>
+        : <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {safeItems.map((item, i) => <li key={i} style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>{item}</li>)}
+          </ul>
+      }
+    </div>
+  )
+}
+
 export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayBrainOutput }) {
   return (
-    <div className="form-card ai-report-card">
+    <div className="form-card ai-report-card" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--color-primary-100)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       <SectionHeader icon="AI" iconColor="violet"
         title="Brain AI Clinical Pathway"
         desc="Clinical pathway, risiko, varians, dan summary multidisiplin dari SumoPod AI"
       />
 
-      <div className="ai-report-section ai-report-hero">
-        <div className="ai-kicker">{result.pathwayName}</div>
-        <h3>{result.executiveSummary}</h3>
-        <p>{result.clinicalSynopsis}</p>
+      {/* ── 1. Narrative Banner — pathway name + executive summary as prose ── */}
+      <div style={{ background: 'linear-gradient(135deg, rgba(20,184,166,0.12) 0%, rgba(9,13,24,0.5) 100%)', border: '1px solid rgba(20,184,166,0.25)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-5)', alignItems: 'start' }}>
+        <div>
+          <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-400)', fontWeight: 700, marginBottom: '8px' }}>{result.pathwayName}</div>
+          <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.6, margin: '0 0 12px' }}>{result.executiveSummary}</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{result.clinicalSynopsis}</p>
+        </div>
+        <AiVisualSnapshot result={result} />
       </div>
 
-      <AiVisualSnapshot result={result} />
+      {/* ── 2. Working Assessment + Reasoning — side-by-side readable cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+        {/* Assessment */}
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
+          <SectionLabel icon="🩺" text="Assessment Kerja" />
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>{result.workingAssessment}</p>
+        </div>
 
-      <div className="ai-report-grid ai-reason-grid">
-        <article className="ai-report-section reason-card">
-          <h4>Assessment Kerja</h4>
-          <p>{result.workingAssessment}</p>
-        </article>
-        <article className="ai-report-section reason-card">
-          <h4>Reasoning Validasi</h4>
-          <div className="reason-stack">
+        {/* Reasoning Validasi */}
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
+          <SectionLabel icon="🔍" text="Reasoning Validasi" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <ReasonPill label="Tindakan" text={result.conformanceAnalysis.diagnosisProcedureFit} />
             <ReasonPill label="Obat" text={result.conformanceAnalysis.diagnosisMedicationFit} />
-            <ReasonPill label="Rawat inap" text={result.conformanceAnalysis.inpatientJustification} />
+            <ReasonPill label="Rawat Inap" text={result.conformanceAnalysis.inpatientJustification} />
             <ReasonPill label="LOS" text={result.conformanceAnalysis.losAssessment} />
             <ReasonPill label="Biaya" text={result.conformanceAnalysis.costSignal} />
           </div>
-        </article>
-      </div>
-
-      <AiValidationBoard result={result} />
-
-      <div className="ai-report-section">
-        <h4>Tujuan Perawatan</h4>
-        <div className="ai-chip-list">
-          {result.careGoals.map((goal) => <span key={goal} className="ai-chip">{goal}</span>)}
         </div>
       </div>
 
-      <div className="ai-report-section" style={{ marginTop: 'var(--space-8)' }}>
-        <h4 style={{ fontSize: '1.25rem', marginBottom: 'var(--space-2)' }}>Clinical Pathway (Day-by-Day Timeline)</h4>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-6)' }}>Alur perawatan klinis berurutan yang direkomendasikan berdasarkan standar dan kondisi pasien.</p>
+      {/* ── 3. Care Goals — chip list with label ── */}
+      <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
+        <SectionLabel icon="🎯" text="Tujuan Perawatan" />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {Array.isArray(result.careGoals) && result.careGoals.map((goal, i) => (
+            <span key={i} style={{ fontSize: '0.82rem', background: 'rgba(20,184,166,0.1)', color: 'var(--color-primary-600)', border: '1px solid rgba(20,184,166,0.2)', padding: '5px 14px', borderRadius: 'var(--radius-md)', fontWeight: 600, lineHeight: 1 }}>{goal}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 4. Validation Board ── */}
+      <AiValidationBoard result={result} />
+
+      {/* ── 5. Day-by-day Timeline ── */}
+      <div>
+        <SectionLabel icon="📅" text="Clinical Pathway — Day-by-Day Timeline" desc="Alur perawatan klinis berurutan berdasarkan standar dan kondisi pasien." />
         <div className="ai-timeline">
           {result.dayByDayPlan.map((plan) => (
             <article key={`${plan.day}-${plan.focus}`} className="ai-day-card">
@@ -359,81 +392,105 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
                 <h5 className="ai-day-focus">{plan.focus}</h5>
               </div>
               <div className="ai-day-grid">
-                <AiPathwayBox icon="🩺" title="Assessment" items={plan.assessments} />
-                <AiPathwayBox icon="⚕️" title="Intervensi" items={plan.interventions} />
-                <AiPathwayBox icon="💊" title="Obat" items={plan.medicationConsiderations} />
-                <AiPathwayBox icon="📊" title="Monitoring" items={plan.monitoring} />
-                <AiPathwayBox icon="✅" title="Kriteria Pulang" items={plan.dischargeCriteria} />
+                <AiPathwayBox icon={<Stethoscope size={16} />} title="Assessment" items={plan.assessments} />
+                <AiPathwayBox icon={<Activity size={16} />} title="Intervensi" items={plan.interventions} />
+                <AiPathwayBox icon={<Pill size={16} />} title="Obat" items={plan.medicationConsiderations} />
+                <AiPathwayBox icon={<BarChart2 size={16} />} title="Monitoring" items={plan.monitoring} />
+                <AiPathwayBox icon={<CheckCircle2 size={16} />} title="Kriteria Pulang" items={plan.dischargeCriteria} />
               </div>
             </article>
           ))}
         </div>
       </div>
 
-      <div className="ai-report-grid visual-card-grid">
-        <article className="ai-report-section visual-risk-panel">
-          <h4>Peta Risiko Klinis</h4>
+      {/* ── 6. Risk & Variance — side-by-side panels ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
+          <SectionLabel icon="⚠️" text="Peta Risiko Klinis" />
           <div className="risk-lane">
-            {result.riskStratification.map((risk) => (
-              <div key={`${risk.level}-${risk.issue}`} className={`risk-tile ${risk.level}`}>
+            {result.riskStratification.map((risk, i) => (
+              <div key={i} className={`risk-tile ${risk.level}`}>
                 <div className="risk-level">{risk.level}</div>
                 <strong>{risk.issue}</strong>
-                <p>{risk.rationale}</p>
-                <span>{risk.recommendedAction}</span>
+                <p style={{ margin: 0, fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{risk.rationale}</p>
+                <span>Rencana: {risk.recommendedAction}</span>
               </div>
             ))}
           </div>
-        </article>
-        <article className="ai-report-section visual-risk-panel">
-          <h4>Varians Pathway</h4>
+        </div>
+        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
+          <SectionLabel icon="📊" text="Varians Pathway" />
           <div className="variance-map">
-            {result.pathwayVariances.map((variance) => (
-              <div key={`${variance.area}-${variance.observedVariance}`} className="variance-node">
+            {result.pathwayVariances.map((variance, i) => (
+              <div key={i} className="variance-node">
                 <div className="variance-area">{variance.area}</div>
                 <strong>{variance.observedVariance}</strong>
-                <p>{variance.potentialImpact}</p>
-                <span>{variance.recommendedFollowUp}</span>
+                <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: 1.5 }}>{variance.potentialImpact}</p>
+                <span>Tindak Lanjut: {variance.recommendedFollowUp}</span>
               </div>
             ))}
+            {result.pathwayVariances.length === 0 && (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: 'var(--space-6)' }}>Tidak terdeteksi deviasi dari jalur pathway standar.</p>
+            )}
           </div>
-        </article>
-      </div>
-
-      <div className="ai-report-section discharge-board">
-        <div className="discharge-status-card">
-          <span>Status Pulang</span>
-          <strong>{result.dischargeReadiness.status.replaceAll('_', ' ')}</strong>
-        </div>
-        <div className="discharge-content">
-          <AiList title="Kriteria terpenuhi" items={result.dischargeReadiness.criteriaMet} />
-          <AiList title="Blocker" items={result.dischargeReadiness.blockers} />
-          <div className="mini-summary-card"><strong>Follow-up</strong><p>{result.dischargeReadiness.followUpPlan}</p></div>
-          <div className="mini-summary-card"><strong>Edukasi</strong><p>{result.dischargeReadiness.patientEducation}</p></div>
         </div>
       </div>
 
-      <div className="audience-summary-board">
-        <AudienceCard label="Klinisi" accent="green" text={result.aiSummaryForClinician} />
-        <AudienceCard label="Coder / Klaim" accent="amber" text={result.aiSummaryForCoder} />
-        <AudienceCard label="Pasien" accent="blue" text={result.aiSummaryForPatient} />
-        <article className="audience-card internal-card">
-          <div className="audience-icon">MD</div>
-          <h4>Mapping Master Data</h4>
-          <p><strong>Patient:</strong> {result.masterDataMapping.patientReference}</p>
-          <AiList title="Resource disarankan" items={result.masterDataMapping.suggestedResources} />
-          <AiList title="Master data kurang" items={result.masterDataMapping.missingMasterData} />
-        </article>
+      {/* ── 7. Discharge Readiness ── */}
+      <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
+          <div style={{ flexShrink: 0, padding: '8px 20px', borderRadius: 'var(--radius-md)', border: `1px solid ${result.dischargeReadiness.status === 'siap' ? 'var(--color-success-500)' : 'var(--color-warning-500)'}`, background: result.dischargeReadiness.status === 'siap' ? 'rgba(34,197,94,0.07)' : 'rgba(245,158,11,0.07)', textAlign: 'center' }}>
+            <span style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.07em', marginBottom: '4px' }}>Status Pemulangan</span>
+            <span style={{ display: 'block', fontWeight: 800, color: result.dischargeReadiness.status === 'siap' ? 'var(--color-success-600)' : 'var(--color-warning-600)', textTransform: 'capitalize', fontSize: '1rem' }}>{result.dischargeReadiness.status.replaceAll('_', ' ')}</span>
+          </div>
+          <div>
+            <SectionLabel icon="🏥" text="Discharge Readiness Assessment" />
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>Kesiapan klinis pasien untuk dipulangkan dari fasilitas kesehatan.</p>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+          <InfoBlock title="Kriteria Terpenuhi" items={result.dischargeReadiness.criteriaMet} accentColor="var(--color-success-500)" bgColor="rgba(34,197,94,0.05)" />
+          <InfoBlock title="Blocker Pemulangan" items={result.dischargeReadiness.blockers} accentColor="var(--color-danger-500)" bgColor="rgba(239,68,68,0.05)" />
+          <div style={{ gridColumn: 'span 2', background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderLeft: '3px solid var(--color-primary-500)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700, color: 'var(--color-primary-500)', marginBottom: '6px' }}>Rencana Tindak Lanjut</div>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{result.dischargeReadiness.followUpPlan}</p>
+          </div>
+          <div style={{ gridColumn: 'span 2', background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderLeft: '3px solid var(--color-info-500)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700, color: 'var(--color-info-500)', marginBottom: '6px' }}>Edukasi Pasien</div>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{result.dischargeReadiness.patientEducation}</p>
+          </div>
+        </div>
       </div>
 
-      <div className="ai-report-grid">
-        <article className="ai-report-section">
-          <h4>Safety Notes</h4>
+      {/* ── 8. Audience Summaries — labeled quote-style cards ── */}
+      <div>
+        <SectionLabel icon="👥" text="Summary Multidisiplin" desc="Ringkasan klinis dirancang untuk masing-masing peran penanggung jawab pelayanan." />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--space-4)', marginTop: 'var(--space-3)' }}>
+          <AudienceCard label="Klinisi" accent="clinician" text={result.aiSummaryForClinician} />
+          <AudienceCard label="Coder / Klaim" accent="coder" text={result.aiSummaryForCoder} />
+          <AudienceCard label="Pasien" accent="patient" text={result.aiSummaryForPatient} />
+          <article className="audience-card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99,102,241,0.12)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800 }}>MD</div>
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>Mapping Master Data</span>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}><span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Ref: </span>{result.masterDataMapping.patientReference}</p>
+            <AiList title="Resource disarankan" items={result.masterDataMapping.suggestedResources} />
+            <AiList title="Master data kurang" items={result.masterDataMapping.missingMasterData} />
+          </article>
+        </div>
+      </div>
+
+      {/* ── 9. Safety & Data Quality — alert-style banners ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+        <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', borderLeft: '4px solid var(--color-danger-500)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+          <SectionLabel icon="🚨" text="Safety Notes" color="var(--color-danger-500)" />
           <AiList items={result.safetyNotes} />
-        </article>
-        <article className="ai-report-section">
-          <h4>Isu Kualitas Data</h4>
+        </div>
+        <div style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderLeft: '4px solid var(--color-warning-500)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+          <SectionLabel icon="🔎" text="Isu Kualitas Data" color="var(--color-warning-500)" />
           <AiList items={result.dataQualityIssues} />
-        </article>
+        </div>
       </div>
     </div>
   )
@@ -445,26 +502,31 @@ function AiVisualSnapshot({ result }: { result: AiClinicalPathwayBrainOutput }) 
   const readinessLabel = result.dischargeReadiness.status.replaceAll('_', ' ')
 
   return (
-    <div className="visual-snapshot">
-      <div className={`snapshot-score ${dashboard.overallStatus}`}>
-        <span>Validation Score</span>
-        <strong>{dashboard.score}</strong>
-        <div className="score-track"><div style={{ width: `${Math.max(0, Math.min(100, dashboard.score))}%` }} /></div>
+    <div className="visual-snapshot" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
+      <div className={`snapshot-score ${dashboard.overallStatus}`} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 'var(--space-4)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', boxShadow: 'var(--shadow-card)' }}>
+        <ScoreCircularGauge score={dashboard.score} size={70} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>Validation Score</span>
+          <strong style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 800 }}>{dashboard.score} / 100</strong>
+          <span style={{ fontSize: '0.7rem', color: dashboard.score >= 80 ? 'var(--color-success-500)' : 'var(--color-warning-500)', fontWeight: 600 }}>
+            {dashboard.score >= 80 ? 'Kesesuaian Tinggi' : 'Perlu Atensi'}
+          </span>
+        </div>
       </div>
-      <div className="snapshot-card">
-        <span>Item ditandai</span>
-        <strong>{dashboard.reviewCount + dashboard.failedCount}</strong>
-        <p>{formatRupiah(dashboard.totalFlaggedCost)} butuh perhatian</p>
+      <div className="snapshot-card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>Item Ditandai</span>
+        <strong style={{ fontSize: '1.5rem', color: dashboard.reviewCount + dashboard.failedCount > 0 ? 'var(--color-danger-500)' : 'var(--text-primary)', fontWeight: 800, lineHeight: 1.2 }}>{dashboard.reviewCount + dashboard.failedCount}</strong>
+        <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{formatRupiah(dashboard.totalFlaggedCost)} butuh perhatian</p>
       </div>
-      <div className="snapshot-card">
-        <span>Risiko tinggi</span>
-        <strong>{highRiskCount}</strong>
-        <p>Dari {result.riskStratification.length} risiko klinis</p>
+      <div className="snapshot-card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>Risiko Tinggi</span>
+        <strong style={{ fontSize: '1.5rem', color: highRiskCount > 0 ? 'var(--color-danger-500)' : 'var(--text-primary)', fontWeight: 800, lineHeight: 1.2 }}>{highRiskCount}</strong>
+        <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Dari {result.riskStratification.length} risiko terdeteksi</p>
       </div>
-      <div className="snapshot-card">
-        <span>Discharge</span>
-        <strong>{readinessLabel}</strong>
-        <p>{result.dischargeReadiness.blockers.length} blocker</p>
+      <div className="snapshot-card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>Discharge Readiness</span>
+        <strong style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 800, lineHeight: 1.2, textTransform: 'capitalize' }}>{readinessLabel}</strong>
+        <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{result.dischargeReadiness.blockers.length} blocker tersisa</p>
       </div>
     </div>
   )
@@ -472,19 +534,22 @@ function AiVisualSnapshot({ result }: { result: AiClinicalPathwayBrainOutput }) 
 
 function ReasonPill({ label, text }: { label: string; text: string }) {
   return (
-    <div className="reason-pill">
-      <span>{label}</span>
-      <p>{text}</p>
+    <div className="reason-pill" style={{ display: 'flex', gap: 'var(--space-3)', background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '0.85rem' }}>
+      <span style={{ fontWeight: 700, color: 'var(--color-primary-500)', minWidth: '90px', flexShrink: 0 }}>{label}</span>
+      <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.4 }}>{text}</p>
     </div>
   )
 }
 
-function AudienceCard({ label, accent, text }: { label: string; accent: 'green' | 'amber' | 'blue'; text: string }) {
+function AudienceCard({ label, accent, text }: { label: string; accent: 'clinician' | 'coder' | 'patient'; text: string }) {
+  const colorClass = accent === 'clinician' ? 'green' : accent === 'coder' ? 'amber' : 'blue'
   return (
-    <article className={`audience-card ${accent}`}>
-      <div className="audience-icon">{label.slice(0, 2).toUpperCase()}</div>
-      <h4>{label}</h4>
-      <p>{text}</p>
+    <article className={`audience-card ${colorClass}`} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)' }}>
+      <div className="audience-icon">
+        {label.slice(0, 2).toUpperCase()}
+      </div>
+      <h4 style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: 'var(--space-3)' }}>{label}</h4>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.45 }}>{text}</p>
     </article>
   )
 }
@@ -499,47 +564,48 @@ function AiValidationBoard({ result }: { result: AiClinicalPathwayBrainOutput })
   }
 
   return (
-    <div className="ai-report-section validation-board">
-      <div className="validation-header">
+    <div className="ai-report-section validation-board" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
+      <div className="validation-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)' }}>
         <div>
-          <h4>Validasi Tindakan & Obat terhadap Diagnosis</h4>
-          <p>Menandai item yang tidak sesuai, perlu review master data/formularium, dan nilai biaya terdampak.</p>
+          <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>Validasi Tindakan & Obat terhadap Diagnosis</h4>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Menandai item yang tidak sesuai, perlu review master data/formularium, dan nilai biaya terdampak.</p>
         </div>
-        <div className={`validation-score ${dashboard.overallStatus}`}>
-          <strong>{dashboard.score}</strong>
-          <span>{statusLabel[dashboard.overallStatus]}</span>
+        <div className={`validation-score ${dashboard.overallStatus}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(20, 184, 166, 0.05)', padding: '6px 16px', borderRadius: 'var(--radius-md)' }}>
+          <strong style={{ fontSize: '1.25rem', color: 'var(--color-primary-500)', fontWeight: 800 }}>{dashboard.score}</strong>
+          <span style={{ fontSize: '0.62rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--color-primary-500)', letterSpacing: '0.05em' }}>{statusLabel[dashboard.overallStatus]}</span>
         </div>
       </div>
 
-      <div className="validation-metrics">
-        <div><strong>{dashboard.passedCount}</strong><span>Sesuai</span></div>
-        <div><strong>{dashboard.reviewCount}</strong><span>Review</span></div>
-        <div><strong>{dashboard.failedCount}</strong><span>Tidak sesuai</span></div>
-        <div><strong>{formatRupiah(dashboard.totalFlaggedCost)}</strong><span>Biaya ditandai</span></div>
+      <div className="validation-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-5)', textAlign: 'center' }}>
+        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}><strong style={{ display: 'block', fontSize: '1.15rem', color: 'var(--color-success-500)' }}>{dashboard.passedCount}</strong><span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Sesuai</span></div>
+        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}><strong style={{ display: 'block', fontSize: '1.15rem', color: 'var(--color-warning-500)' }}>{dashboard.reviewCount}</strong><span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Review</span></div>
+        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}><strong style={{ display: 'block', fontSize: '1.15rem', color: 'var(--color-danger-500)' }}>{dashboard.failedCount}</strong><span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Tidak Sesuai</span></div>
+        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}><strong style={{ display: 'block', fontSize: '1.05rem', color: 'var(--color-accent-500)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{formatRupiah(dashboard.totalFlaggedCost)}</strong><span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Biaya Ditandai</span></div>
       </div>
 
-      <div className="ai-chip-list validation-findings">
-        {dashboard.quickFindings.map((finding) => <span key={finding} className="ai-chip">{finding}</span>)}
+      <div className="ai-chip-list validation-findings" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: 'var(--space-5)' }}>
+        {dashboard.quickFindings.map((finding) => <span key={finding} className="ai-chip" style={{ fontSize: '0.74rem', background: 'var(--bg-base)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{finding}</span>)}
       </div>
 
-      <div className="validation-item-grid">
+      <div className="validation-item-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
         {dashboard.validatedItems.map((item) => (
-          <article key={`${item.type}-${item.id}`} className={`validation-item ${item.status}`}>
-            <div className="validation-item-top">
-              <span className="validation-type">{item.type === 'procedure' ? 'Tindakan' : 'Obat'}</span>
-              <span className={`validation-status ${item.status}`}>{statusLabel[item.status]}</span>
+          <article key={`${item.type}-${item.id}`} className={`validation-item ${item.status}`} style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderTop: `3px solid ${item.status === 'sesuai' ? 'var(--color-success-500)' : item.status === 'tidak_sesuai' ? 'var(--color-danger-500)' : 'var(--color-warning-500)'}`, borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <div className="validation-item-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="validation-type" style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>{item.type === 'procedure' ? 'Tindakan' : 'Obat'}</span>
+              <span className={`validation-status ${item.status}`} style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}>{statusLabel[item.status]}</span>
             </div>
-            <h5>{item.name || item.code || 'Item tanpa nama'}</h5>
-            <div className="validation-code">Kode: {item.code || '—'} · ID: {item.id || '—'}</div>
-            <div className="validation-price">
-              <strong>{formatRupiah(item.totalCost)}</strong>
-              <span>{formatRupiah(item.unitCost)} × {item.quantity}</span>
+            <h5 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{item.name || item.code || 'Item tanpa nama'}</h5>
+            <div className="validation-code" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Kode: {item.code || '—'} · ID: {item.id || '—'}</div>
+            <div className="validation-price" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: '1px dashed var(--border-subtle)', borderBottom: '1px dashed var(--border-subtle)', padding: '4px 0', margin: '4px 0' }}>
+              <strong style={{ fontSize: '0.9rem', color: 'var(--color-primary-500)' }}>{formatRupiah(item.totalCost)}</strong>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{formatRupiah(item.unitCost)} × {item.quantity}</span>
             </div>
-            <p><strong>Relasi diagnosis:</strong> {item.diagnosisRelation}</p>
-            <p><strong>Master Data:</strong> {item.masterDataValidation}</p>
-            <p><strong>Harga:</strong> {item.priceAssessment}</p>
-            <p><strong>Catatan:</strong> {item.issue}</p>
-            <span className="validation-action">{item.recommendedAction}</span>
+            <div style={{ fontSize: '0.74rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <p style={{ margin: 0 }}><strong>Relasi Diagnosis:</strong> {item.diagnosisRelation}</p>
+              <p style={{ margin: 0 }}><strong>Master Data:</strong> {item.masterDataValidation}</p>
+              <p style={{ margin: 0 }}><strong>Catatan:</strong> {item.issue}</p>
+            </div>
+            <span className="validation-action" style={{ display: 'block', fontSize: '0.74rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', padding: '6px', borderRadius: 'var(--radius-sm)', fontWeight: 600, color: 'var(--color-primary-500)', marginTop: 'auto', textAlign: 'center' }}>Rekomendasi: {item.recommendedAction}</span>
           </article>
         ))}
       </div>
@@ -548,19 +614,21 @@ function AiValidationBoard({ result }: { result: AiClinicalPathwayBrainOutput })
 }
 
 function AiList({ title, items }: { title?: string; items: string[] }) {
-  if (items.length === 0) return null
+  const safeItems = Array.isArray(items) ? items : (typeof items === 'string' ? [items] : [])
+  if (safeItems.length === 0) return null
   return (
-    <div className="ai-list-block">
-      {title && <span>{title}</span>}
-      <ul>
-        {items.map((item) => <li key={item}>{item}</li>)}
+    <div className="ai-list-block" style={{ fontSize: '0.8rem' }}>
+      {title && <span style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>{title}</span>}
+      <ul style={{ paddingLeft: '16px', margin: 0, color: 'var(--text-secondary)' }}>
+        {safeItems.map((item, i) => <li key={i} style={{ marginBottom: '2px' }}>{item}</li>)}
       </ul>
     </div>
   )
 }
 
-function AiPathwayBox({ icon, title, items }: { icon: string; title: string; items: string[] }) {
-  if (items.length === 0) return null
+function AiPathwayBox({ icon, title, items }: { icon: React.ReactNode; title: string; items: string[] }) {
+  const safeItems = Array.isArray(items) ? items : (typeof items === 'string' ? [items] : [])
+  if (safeItems.length === 0) return null
   return (
     <div className="ai-pathway-box">
       <div className="ai-pathway-box-header">
@@ -568,7 +636,7 @@ function AiPathwayBox({ icon, title, items }: { icon: string; title: string; ite
         <span>{title}</span>
       </div>
       <ul className="ai-pathway-list">
-        {items.map((item) => <li key={item}>{item}</li>)}
+        {safeItems.map((item, i) => <li key={i}>{item}</li>)}
       </ul>
     </div>
   )
