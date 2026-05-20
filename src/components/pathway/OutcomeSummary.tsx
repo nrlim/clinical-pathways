@@ -1,9 +1,9 @@
 'use client'
 
 import { SectionHeader } from '@/components/ui/PathwayPrimitives'
-import { BrainCircuit, ClipboardCheck, AlertTriangle, Stethoscope, Activity, Pill, BarChart2, CheckCircle2, DollarSign, CalendarDays, ShieldCheck, FileWarning } from 'lucide-react'
+import { BrainCircuit, ClipboardCheck, AlertTriangle, Stethoscope, Activity, Pill, BarChart2, CheckCircle2, DollarSign, CalendarDays, ShieldCheck, FileWarning, Database } from 'lucide-react'
 import { formatRupiah } from '@/lib/pathway-utils'
-import type { OutcomeSection, PathwaySummary } from '@/types/clinical-pathway'
+import type { OutcomeSection, PathwaySummary, AiSummaryFeed } from '@/types/clinical-pathway'
 import type { AiClinicalPathwayBrainOutput, AiValidationStatus } from '@/types/ai-clinical-pathway'
 
 // ─── Section 7: Outcome ────────────────────────────────────
@@ -143,9 +143,11 @@ function ConformanceRow({ label, value, badge, badgeLabel }: { label: string; va
 export function SummaryPanel({
   summary,
   brainResult,
+  aiFeed,
 }: {
   summary: PathwaySummary
   brainResult?: AiClinicalPathwayBrainOutput
+  aiFeed?: AiSummaryFeed
 }) {
   const conformance = (rate: number) =>
     rate >= 80 ? 'sesuai' : rate >= 50 ? 'review' : 'tidak'
@@ -168,6 +170,9 @@ export function SummaryPanel({
   const db = brainResult?.validationDashboard
   const totalItems = hasAi && db ? db.passedCount + db.reviewCount + db.failedCount : 0
   const aiPassRate = totalItems > 0 ? Math.round((db!.passedCount / totalItems) * 100) : 0
+  
+  // Data Coverage / Read Accuracy
+  const dataAccuracy = aiFeed?.masterDataValidation?.summary?.coverageRate ?? 0
 
   const underChargeRate = summary.expectedLOS != null && summary.actualLOS != null && summary.expectedLOS > 0
     ? Math.max(0, ((summary.expectedLOS - summary.actualLOS) / summary.expectedLOS) * 100)
@@ -229,7 +234,7 @@ export function SummaryPanel({
               {db.score}<span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-muted)' }}>/100</span>
             </div>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '10px' }}>
-              {db.passedCount} dari {totalItems} item lolos validasi AI. Akurasi kesesuaian: <strong style={{ color: 'var(--text-primary)' }}>{aiPassRate}%</strong>.
+              {db.passedCount} dari {totalItems} item lolos validasi AI. Tingkat kelayakan klinis: <strong style={{ color: 'var(--text-primary)' }}>{aiPassRate}%</strong>.
             </p>
             {db.totalFlaggedCost > 0 && (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-md)', padding: '5px 12px', fontSize: '0.82rem', color: 'var(--color-danger-500)', fontWeight: 700 }}>
@@ -286,12 +291,12 @@ export function SummaryPanel({
             <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                 <div style={{ width: '28px', height: '28px', background: 'rgba(20, 184, 166, 0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary-600)', flexShrink: 0 }}>
-                  <BrainCircuit size={15} />
+                  <Database size={15} />
                 </div>
-                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Akurasi AI</span>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Akurasi Baca Data</span>
               </div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
-                {aiPassRate}%
+                {dataAccuracy}%
               </div>
             </div>
           )}

@@ -517,7 +517,7 @@ export default function ClinicalPathwayPage() {
 
                     {summaryTab === 'summary' && (
                       <div className="fade-in animate-in">
-                        <SummaryPanel summary={summary} brainResult={brainResponse?.result} />
+                        <SummaryPanel summary={summary} brainResult={brainResponse?.result} aiFeed={feedData || undefined} />
                       </div>
                     )}
 
