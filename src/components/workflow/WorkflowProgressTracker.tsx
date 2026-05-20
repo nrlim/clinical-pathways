@@ -8,21 +8,12 @@ export type WorkflowStep = {
 
 export type WorkflowStepState = 'waiting' | 'running' | 'done' | 'error'
 
-export interface WorkflowSummary {
-  totalCost: number
-  totalProcedureCost: number
-  totalMedicationCost: number
-  expectedLOS: number | null
-  actualLOS: number | null
-}
-
 interface WorkflowProgressTrackerProps {
   steps: WorkflowStep[]
   stepStates: Record<string, WorkflowStepState>
   currentStepIndex: number
   isError?: boolean
   errorMessage?: string
-  summary?: WorkflowSummary | null
   /** Called when user clicks the Minimize button */
   onMinimize?: () => void
 }
@@ -44,23 +35,11 @@ export function WorkflowProgressTracker({
   currentStepIndex,
   isError = false,
   errorMessage,
-  summary,
   onMinimize,
 }: WorkflowProgressTrackerProps) {
   const doneCount = Object.values(stepStates).filter(s => s === 'done').length
   const totalSteps = steps.length
   const isDone = currentStepIndex >= totalSteps
-
-  // Under/overcharge computation
-  const underChargeRate = summary && summary.expectedLOS != null && summary.actualLOS != null && summary.expectedLOS > 0
-    ? Math.max(0, ((summary.expectedLOS - summary.actualLOS) / summary.expectedLOS) * 100)
-    : null
-  const overChargeRate = summary && summary.expectedLOS != null && summary.actualLOS != null && summary.expectedLOS > 0
-    ? Math.max(0, ((summary.actualLOS - summary.expectedLOS) / summary.expectedLOS) * 100)
-    : null
-  const isOverCharge = summary && summary.actualLOS != null && summary.expectedLOS != null
-    ? summary.actualLOS > summary.expectedLOS
-    : false
 
   return (
     <div className="workflow-tracker animate-in" role="status" aria-live="polite">
@@ -159,43 +138,6 @@ export function WorkflowProgressTracker({
           )
         })}
       </ol>
-
-      {/* Summary: Under/Overcharge — tampil jika ada data biaya */}
-      {summary && (
-        <div className="workflow-charge-summary">
-          <div className="workflow-charge-row">
-            <span className="workflow-charge-label">Biaya Tindakan</span>
-            <span className="workflow-charge-value">{formatRp(summary.totalProcedureCost)}</span>
-          </div>
-          <div className="workflow-charge-row">
-            <span className="workflow-charge-label">Biaya Obat</span>
-            <span className="workflow-charge-value">{formatRp(summary.totalMedicationCost)}</span>
-          </div>
-          <div className="workflow-charge-row total">
-            <span className="workflow-charge-label">Total Episode</span>
-            <span className="workflow-charge-value total">{formatRp(summary.totalCost)}</span>
-          </div>
-          {summary.expectedLOS != null && summary.actualLOS != null && (
-            <div className={`workflow-charge-tag ${isOverCharge ? 'overcharge' : 'undercharge'}`}>
-              {isOverCharge ? (
-                <>
-                  <span className="workflow-charge-tag-icon">↑</span>
-                  <span>Overcharge LOS</span>
-                  <strong>{overChargeRate?.toFixed(1)}%</strong>
-                  <span className="workflow-charge-tag-detail">(Aktual {summary.actualLOS}h vs Expected {summary.expectedLOS}h)</span>
-                </>
-              ) : (
-                <>
-                  <span className="workflow-charge-tag-icon">↓</span>
-                  <span>Undercharge LOS</span>
-                  <strong>{underChargeRate?.toFixed(1)}%</strong>
-                  <span className="workflow-charge-tag-detail">(Aktual {summary.actualLOS}h vs Expected {summary.expectedLOS}h)</span>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }

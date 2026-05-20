@@ -122,6 +122,7 @@ export interface PathwaySummary {
   totalMedicationCost: number
   totalCost: number
   actualLOS: number | null
+  expectedLOS: number | null
   procedureConformanceRate: number   // % sesuai diagnosa
   medicationConformanceRate: number  // % sesuai diagnosa
   inpatientJustified: boolean | null

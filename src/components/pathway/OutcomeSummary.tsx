@@ -169,6 +169,16 @@ export function SummaryPanel({
   const totalItems = hasAi && db ? db.passedCount + db.reviewCount + db.failedCount : 0
   const aiPassRate = totalItems > 0 ? Math.round((db!.passedCount / totalItems) * 100) : 0
 
+  const underChargeRate = summary.expectedLOS != null && summary.actualLOS != null && summary.expectedLOS > 0
+    ? Math.max(0, ((summary.expectedLOS - summary.actualLOS) / summary.expectedLOS) * 100)
+    : null
+  const overChargeRate = summary.expectedLOS != null && summary.actualLOS != null && summary.expectedLOS > 0
+    ? Math.max(0, ((summary.actualLOS - summary.expectedLOS) / summary.expectedLOS) * 100)
+    : null
+  const isOverCharge = summary.actualLOS != null && summary.expectedLOS != null
+    ? summary.actualLOS > summary.expectedLOS
+    : false
+
   return (
     <div className="form-card" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}>
       <SectionHeader icon="SM" iconColor="blue"
@@ -230,10 +240,10 @@ export function SummaryPanel({
         </div>
       )}
 
-      {/* ── ZONE 2: Cost & LOS KPIs — fixed 4-column strip ── */}
+      {/* ── ZONE 2: Cost & LOS KPIs — fixed strip ── */}
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <p style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>Ringkasan Biaya &amp; Durasi</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${hasAi ? 5 : 4}, 1fr)`, gap: 'var(--space-3)' }}>
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
               <div style={{ width: '28px', height: '28px', background: 'rgba(99,102,241,0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1', flexShrink: 0 }}>
@@ -272,7 +282,42 @@ export function SummaryPanel({
               {summary.actualLOS !== null ? `${summary.actualLOS} hari` : '—'}
             </div>
           </div>
+          {hasAi && (
+            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <div style={{ width: '28px', height: '28px', background: 'rgba(20, 184, 166, 0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary-600)', flexShrink: 0 }}>
+                  <BrainCircuit size={15} />
+                </div>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Akurasi AI</span>
+              </div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
+                {aiPassRate}%
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* ── Undercharge / Overcharge Tag ── */}
+        {summary.expectedLOS != null && summary.actualLOS != null && (
+          <div style={{ 
+            marginTop: '12px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            padding: '8px 14px', 
+            borderRadius: 'var(--radius-md)', 
+            fontSize: '0.8rem', 
+            fontWeight: 600,
+            background: isOverCharge ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+            border: `1px solid ${isOverCharge ? 'rgba(239, 68, 68, 0.25)' : 'rgba(245, 158, 11, 0.25)'}`,
+            color: isOverCharge ? 'var(--color-danger-600)' : 'var(--color-warning-600)'
+          }}>
+            <span style={{ fontSize: '1rem', fontWeight: 800 }}>{isOverCharge ? '↑' : '↓'}</span>
+            <span>{isOverCharge ? 'Overcharge LOS' : 'Undercharge LOS'}</span>
+            <strong style={{ fontSize: '0.85rem' }}>{isOverCharge ? overChargeRate?.toFixed(1) : underChargeRate?.toFixed(1)}%</strong>
+            <span style={{ fontSize: '0.75rem', opacity: 0.75, marginLeft: '4px' }}>(Aktual {summary.actualLOS}h vs Expected {summary.expectedLOS}h)</span>
+          </div>
+        )}
       </div>
 
       {/* ── ZONE 3: Conformance Breakdown — clean checklist rows ── */}

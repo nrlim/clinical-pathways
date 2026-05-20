@@ -688,13 +688,6 @@ export default function ClinicalPathwayPage() {
             isError={workflowError}
             errorMessage={submitMessage}
             onMinimize={() => setIsMinimized(true)}
-            summary={{
-              totalCost: summary.totalCost,
-              totalProcedureCost: summary.totalProcedureCost,
-              totalMedicationCost: summary.totalMedicationCost,
-              actualLOS: summary.actualLOS,
-              expectedLOS: form.encounter.expected_los ? parseInt(form.encounter.expected_los, 10) || null : null,
-            }}
           />
         </div>
       )}

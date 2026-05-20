@@ -23,12 +23,14 @@ export function computeSummary(form: ClinicalPathwayForm): PathwaySummary {
     form.encounter.admission_date,
     form.encounter.discharge_date,
   )
+  const expectedLOS = form.encounter.expected_los ? parseInt(form.encounter.expected_los, 10) || null : null
 
   return {
     totalProcedureCost,
     totalMedicationCost,
     totalCost: totalProcedureCost + totalMedicationCost,
     actualLOS,
+    expectedLOS,
     procedureConformanceRate,
     medicationConformanceRate,
     inpatientJustified: form.inpatient.is_inpatient_indicated,
