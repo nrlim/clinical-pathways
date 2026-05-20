@@ -388,7 +388,7 @@ export function SummaryPanel({
             } else {
               if (doc.required) {
                 statusBadgeClass = 'tidak'
-                statusLabel = 'Wajib & Hilang (-15)'
+                statusLabel = 'Wajib & Hilang'
               } else {
                 statusBadgeClass = 'review'
                 statusLabel = 'Opsional'
@@ -422,13 +422,12 @@ export function SummaryPanel({
           })}
         </div>
 
-        {/* Penalty details */}
+        {/* Document Status Warning */}
         {hasAi && db && db.documentVerification && (() => {
           const missingCount = db.documentVerification.filter(d => d.required && (!d.file_name || d.file_name.trim().length === 0)).length
           const invalidCount = db.documentVerification.filter(d => d.verification_status === 'invalid').length
-          const totalPenalties = (missingCount + invalidCount) * 15
 
-          if (totalPenalties > 0) {
+          if (missingCount > 0 || invalidCount > 0) {
             return (
               <div style={{
                 marginTop: '12px',
@@ -444,9 +443,9 @@ export function SummaryPanel({
                 color: 'var(--color-danger-600)'
               }}>
                 <AlertTriangle size={15} />
-                <span>Pinalti Kelengkapan Berkas: </span>
-                <strong style={{ fontSize: '0.85rem' }}>-{totalPenalties} Poin</strong>
-                <span style={{ fontSize: '0.75rem', opacity: 0.75, marginLeft: '4px' }}>(Terdiri dari {missingCount} berkas wajib hilang &amp; {invalidCount} berkas tidak valid)</span>
+                <span>Status Dokumen: </span>
+                <strong style={{ fontSize: '0.85rem' }}>Perlu Dilengkapi / Direviu</strong>
+                <span style={{ fontSize: '0.75rem', opacity: 0.75, marginLeft: '4px' }}>(Terdapat {missingCount} berkas wajib hilang &amp; {invalidCount} berkas tidak valid)</span>
               </div>
             )
           }
