@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { SectionHeader } from '@/components/ui/PathwayPrimitives'
-import { BrainCircuit, ClipboardCheck, AlertTriangle, Stethoscope, Activity, Pill, BarChart2, CheckCircle2, DollarSign, CalendarDays, ShieldCheck, FileWarning, Database } from 'lucide-react'
+import { BrainCircuit, ClipboardCheck, AlertTriangle, Stethoscope, Activity, Pill, BarChart2, CheckCircle2, DollarSign, CalendarDays, ShieldCheck, FileWarning, Database, Info } from 'lucide-react'
 import { formatRupiah } from '@/lib/pathway-utils'
 import type { OutcomeSection, PathwaySummary, AiSummaryFeed } from '@/types/clinical-pathway'
 import type { AiClinicalPathwayBrainOutput, AiValidationStatus } from '@/types/ai-clinical-pathway'
@@ -149,6 +150,7 @@ export function SummaryPanel({
   brainResult?: AiClinicalPathwayBrainOutput
   aiFeed?: AiSummaryFeed
 }) {
+  const [showScoreInfo, setShowScoreInfo] = useState(false)
   const conformance = (rate: number) =>
     rate >= 80 ? 'sesuai' : rate >= 50 ? 'review' : 'tidak'
 
@@ -233,9 +235,29 @@ export function SummaryPanel({
             <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '10px' }}>
               {db.score}<span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-muted)' }}>/100</span>
             </div>
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '10px' }}>
-              {db.passedCount} dari {totalItems} item lolos validasi AI. Tingkat kelayakan klinis: <strong style={{ color: 'var(--text-primary)' }}>{aiPassRate}%</strong>.
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55, margin: 0 }}>
+                {db.passedCount} dari {totalItems} item lolos validasi AI. Tingkat kelayakan klinis: <strong style={{ color: 'var(--text-primary)' }}>{aiPassRate}%</strong>.
+              </p>
+              <button 
+                type="button"
+                onClick={() => setShowScoreInfo(!showScoreInfo)}
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: showScoreInfo ? 'var(--color-primary-500)' : 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                title="Info AI Score"
+              >
+                <Info size={16} />
+              </button>
+            </div>
+            
+            {showScoreInfo && (
+              <div className="fade-in animate-in" style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', padding: '8px 12px', borderRadius: 'var(--radius-md)', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                <strong style={{ color: 'var(--text-secondary)' }}>Arti AI Score:</strong>
+                <span><strong style={{ color: 'var(--color-success-600)' }}>100</strong> = Semua Sesuai</span>
+                <span><strong style={{ color: 'var(--color-warning-600)' }}>75</strong> = Mayoritas Sesuai</span>
+                <span><strong style={{ color: 'var(--color-warning-600)' }}>50</strong> = Separuh Review/Tidak Sesuai</span>
+                <span><strong style={{ color: 'var(--color-danger-600)' }}>0</strong> = Semua Tidak Sesuai/Kurang Data</span>
+              </div>
+            )}
             {db.totalFlaggedCost > 0 && (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-md)', padding: '5px 12px', fontSize: '0.82rem', color: 'var(--color-danger-500)', fontWeight: 700 }}>
                 <AlertTriangle size={14} /> {formatRupiah(db.totalFlaggedCost)} perlu ditinjau
@@ -248,7 +270,7 @@ export function SummaryPanel({
       {/* ── ZONE 2: Cost & LOS KPIs — fixed strip ── */}
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <p style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>Ringkasan Biaya &amp; Durasi</p>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${hasAi ? 5 : 4}, 1fr)`, gap: 'var(--space-3)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)' }}>
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
               <div style={{ width: '28px', height: '28px', background: 'rgba(99,102,241,0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1', flexShrink: 0 }}>
@@ -287,19 +309,6 @@ export function SummaryPanel({
               {summary.actualLOS !== null ? `${summary.actualLOS} hari` : '—'}
             </div>
           </div>
-          {hasAi && (
-            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <div style={{ width: '28px', height: '28px', background: 'rgba(20, 184, 166, 0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary-600)', flexShrink: 0 }}>
-                  <Database size={15} />
-                </div>
-                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Akurasi Baca Data</span>
-              </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
-                {dataAccuracy}%
-              </div>
-            </div>
-          )}
         </div>
 
         {/* ── Undercharge / Overcharge Tag ── */}
@@ -620,9 +629,10 @@ function AiValidationBoard({ result }: { result: AiClinicalPathwayBrainOutput })
           <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>Validasi Tindakan & Obat terhadap Diagnosis</h4>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Menandai item yang tidak sesuai, perlu review master data/formularium, dan nilai biaya terdampak.</p>
         </div>
-        <div className={`validation-score ${dashboard.overallStatus}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(20, 184, 166, 0.05)', padding: '6px 16px', borderRadius: 'var(--radius-md)' }}>
-          <strong style={{ fontSize: '1.25rem', color: 'var(--color-primary-500)', fontWeight: 800 }}>{dashboard.score}</strong>
-          <span style={{ fontSize: '0.62rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--color-primary-500)', letterSpacing: '0.05em' }}>{statusLabel[dashboard.overallStatus]}</span>
+        <div className={`validation-score ${dashboard.overallStatus}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', padding: '8px 16px', borderRadius: 'var(--radius-md)' }}>
+          <span style={{ fontSize: '0.62rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '2px' }}>AI Score</span>
+          <strong style={{ fontSize: '1.25rem', color: 'var(--color-primary-500)', fontWeight: 800, lineHeight: 1 }}>{dashboard.score}<span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/100</span></strong>
+          <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 700, color: dashboard.overallStatus === 'sesuai' ? 'var(--color-success-600)' : dashboard.overallStatus === 'tidak_sesuai' ? 'var(--color-danger-600)' : 'var(--color-warning-600)', marginTop: '4px' }}>{statusLabel[dashboard.overallStatus]}</span>
         </div>
       </div>
 

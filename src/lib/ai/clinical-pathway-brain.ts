@@ -10,9 +10,9 @@ import { createSumoPodChatCompletion, getSumoPodModel } from './sumopod'
 export async function generateClinicalPathwayBrain(feed: AiSummaryFeed): Promise<AiClinicalPathwayResponse> {
   const startedAt = Date.now()
   const rawText = await createSumoPodChatCompletion({
-    temperature: 0.1,   // Lower temp → more deterministic JSON, less retries
-    maxTokens: 6000,    // Reduced from 10000; clinical JSON is well-structured, 6k is enough
-    budgetTokens: 3000, // Cap Kimi reasoning chain → significantly faster (40-60s vs 90-120s)
+    temperature: 0.1,
+    maxTokens: 5000,
+    budgetTokens: 2500,
     messages: [
       { role: 'system', content: buildSystemPrompt() },
       { role: 'user', content: buildUserPrompt(feed) },
@@ -29,50 +29,107 @@ export async function generateClinicalPathwayBrain(feed: AiSummaryFeed): Promise
   }
 }
 
-
 function buildSystemPrompt(): string {
-  return `Anda adalah Brain AI Clinical Pathway untuk rumah sakit Indonesia.
-Berpikir sebagai tim multidisiplin: DPJP, perawat, farmasi, case manager, coder INA-CBGs.
+  return `You are a Clinical Pathway Brain AI for Indonesian hospitals.
+Act as a multidisciplinary team: DPJP, nurse, pharmacist, case manager, INA-CBGs coder.
 
-Aturan wajib:
-- Feed yang dikirim SUDAH mengandung field "masterDataValidation" — hasil cross-check otomatis terhadap katalog Master Data lokal (ICD-10, FORNAS, INA-CBG).
-- Gunakan status dari "masterDataValidation" sebagai DASAR utama validasi item. Jangan menebak atau mengabaikan informasi ini.
-  · status "valid" → item terdaftar dan aktif di faskes, gunakan masterName/masterTariff sebagai referensi harga resmi.
-  · status "not_found" → item tidak ada di katalog lokal; wajib tandai "perlu_review" dan catat di dataQualityIssues.
-  · status "not_active" → item terdaftar tapi tidak aktif di faskes; wajib tandai "tidak_sesuai".
-- Jangan mengarang data yang tidak ada di feed. Tulis kekurangan data di dataQualityIssues.
-- Jangan buat diagnosis baru; differential boleh sebagai risiko.
-- Validasi item terhadap diagnosis klinis; tandai tidak_sesuai/perlu_review jika perlu.
-- Jika masterTariff tersedia dari masterDataValidation, gunakan sebagai referensi harga dasar di priceAssessment.
-- Output adalah decision support, bukan pengganti instruksi dokter.
-- Gunakan Bahasa Indonesia klinis.
-- Kembalikan HANYA JSON valid tanpa markdown, tanpa penjelasan tambahan.`
+Rules:
+- The feed includes "masterDataValidation" — pre-computed cross-checks against local Master Data (ICD-10, FORNAS, INA-CBG). Use these as the PRIMARY validation basis.
+  · "valid" → item registered and active; use masterName/masterTariff as reference.
+  · "not_found" → not in local catalog; mark "perlu_review" and log in dataQualityIssues.
+  · "not_active" → registered but inactive; mark "tidak_sesuai".
+- Do not invent data not present in the feed. Log gaps in dataQualityIssues.
+- Do not create new diagnoses; differentials are allowed as risks.
+- Validate each item against the clinical diagnosis.
+- When masterTariff is available, use it as base price in priceAssessment.
+- Output is clinical decision support, not a substitute for physician orders.
+- Use clinical Indonesian for all text fields.
+- Return ONLY valid JSON without markdown or extra explanation.`
 }
 
 function buildUserPrompt(feed: AiSummaryFeed): string {
   const schema = `{"executiveSummary":"str","clinicalSynopsis":"str","workingAssessment":"str","pathwayName":"str","careGoals":["str"],"validationDashboard":{"overallStatus":"sesuai|tidak_sesuai|perlu_review|data_kurang","score":0,"passedCount":0,"reviewCount":0,"failedCount":0,"totalFlaggedCost":0,"quickFindings":["str"],"validatedItems":[{"id":"str","type":"procedure|medication","code":"str","name":"str","status":"sesuai|tidak_sesuai|perlu_review|data_kurang","diagnosisRelation":"str","masterDataValidation":"str","unitCost":0,"quantity":0,"totalCost":0,"priceAssessment":"str","issue":"str","recommendedAction":"str"}]},"dayByDayPlan":[{"day":"str","focus":"str","assessments":["str"],"interventions":["str"],"medicationConsiderations":["str"],"monitoring":["str"],"dischargeCriteria":["str"]}],"conformanceAnalysis":{"diagnosisProcedureFit":"str","diagnosisMedicationFit":"str","inpatientJustification":"str","losAssessment":"str","costSignal":"str"},"riskStratification":[{"level":"rendah|sedang|tinggi|kritis","issue":"str","rationale":"str","recommendedAction":"str"}],"pathwayVariances":[{"area":"str","observedVariance":"str","potentialImpact":"str","recommendedFollowUp":"str"}],"dischargeReadiness":{"status":"belum_siap|perlu_review|siap|tidak_dinilai","criteriaMet":["str"],"blockers":["str"],"followUpPlan":"str","patientEducation":"str"},"masterDataMapping":{"patientReference":"str","suggestedResources":["str"],"missingMasterData":["str"]},"aiSummaryForClinician":"str","aiSummaryForCoder":"str","aiSummaryForPatient":"str","safetyNotes":["str"],"dataQualityIssues":["str"]}`
 
-  return `Buat clinical pathway detail dari feed berikut. Kembalikan JSON valid dengan struktur ini persis:
+  const compressedFeed = buildCompressedFeed(feed)
+
+  return `Generate a clinical pathway from the feed below. Return valid JSON matching this exact schema:
 ${schema}
 
-Instruksi analisis (wajib lengkap):
-1. executiveSummary: ringkasan eksekutif klinis padat tapi menyeluruh mencakup kondisi, rencana, dan outlook pasien.
-2. clinicalSynopsis: narasi klinis lengkap tentang perjalanan penyakit, status saat ini, dan faktor relevan.
-3. dayByDayPlan: buat rencana per hari sesuai LOS dari feed — setiap hari WAJIB memiliki assessments, interventions, medicationConsiderations, monitoring, dan dischargeCriteria yang spesifik dan operasional (bukan generik).
-4. validatedItems: validasi SETIAP item tindakan dan obat berdasarkan field "masterDataValidation" di feed.
-   - Gunakan "id" dari item di feed (sama dengan id di masterDataValidation).
-   - Jika status masterDataValidation = "valid": gunakan masterName sebagai name, masterTariff sebagai unitCost referensi.
-   - Jika status = "not_found": set status validatedItem = "perlu_review", catat di issue dan dataQualityIssues.
-   - Jika status = "not_active": set status validatedItem = "tidak_sesuai", catat di issue.
-   - Sertakan diagnosisRelation, masterDataValidation (dari field note di masterDataValidation), priceAssessment, issue, dan recommendedAction.
-5. Tandai "tidak_sesuai" jika item tidak berhubungan dengan diagnosis atau conformance=tidak di feed.
-6. Hitung validationDashboard: score 0-100, passedCount/reviewCount/failedCount yang akurat, totalFlaggedCost dari semua item berstatus tidak_sesuai atau perlu_review.
-7. riskStratification: identifikasi semua risiko klinis yang relevan dengan level dan rekomendasi spesifik. pathwayVariances: varians dari standar pathway. dischargeReadiness: status, kriteria terpenuhi, blocker, follow-up, dan edukasi pasien.
-8. masterDataMapping: ringkasan item mana yang ditemukan/tidak ditemukan di master data lokal, dan apa yang perlu dilengkapi.
-9. Buat 3 summary BERBEDA dengan gaya dan fokus yang tepat: untuk klinisi (klinis mendalam), coder/klaim (kode dan biaya), dan pasien (bahasa awam mudah dipahami).
+Instructions:
+1. executiveSummary: concise but complete clinical executive summary (condition, plan, outlook).
+2. clinicalSynopsis: full clinical narrative (disease course, current status, relevant factors).
+3. dayByDayPlan: daily care plan per LOS from feed — MAX 7 days. Each day must have specific, operational (not generic) assessments, interventions, medicationConsiderations, monitoring, and dischargeCriteria.
+4. validatedItems: validate EVERY procedure/medication using "masterDataValidation" in feed. Use same "id" from feed. If status=valid: use masterName as name, masterTariff as unitCost reference. If status=not_found: mark perlu_review, log in issue+dataQualityIssues. If status=not_active: mark tidak_sesuai.
+5. Mark "tidak_sesuai" if item is clinically unrelated to diagnosis or conformance=tidak.
+6. Compute validationDashboard: accurate score 0-100, counts, totalFlaggedCost from all non-sesuai items.
+7. riskStratification, pathwayVariances, dischargeReadiness: specific and actionable, not generic.
+8. masterDataMapping: summarize found/missing items and what needs to be added.
+9. Three distinct summaries: clinician (clinical depth), coder (codes & billing), patient (plain language).
 
 Feed:
-${JSON.stringify(feed)}`
+${compressedFeed}`
+}
+
+/**
+ * Builds a minimal feed payload for the AI — strips non-clinical fields to reduce input tokens.
+ * masterDataValidation is kept intact as it is the core validation basis.
+ */
+function buildCompressedFeed(feed: AiSummaryFeed): string {
+  const compressed = {
+    patient: {
+      name: feed.patient.patient_name,
+      nik: feed.patient.nik,
+      birth_date: feed.patient.birth_date,
+      gender: feed.patient.gender,
+      mr_number: feed.patient.mr_number,
+      guarantor: feed.patient.guarantor,
+      bpjs_number: feed.patient.bpjs_number,
+    },
+    encounter: {
+      class: feed.encounter.encounter_class,
+      admission: feed.encounter.admission_date,
+      discharge: feed.encounter.discharge_date,
+      ward: feed.encounter.ward,
+      expected_los: feed.encounter.expected_los,
+      practitioner: feed.encounter.practitioner_name,
+      org: feed.encounter.organization_id,
+    },
+    diagnosis: {
+      primary_code: feed.diagnosis.primary_diagnosis_code,
+      primary_name: feed.diagnosis.primary_diagnosis_name,
+      secondary: feed.diagnosis.secondary_diagnoses,
+      severity: feed.diagnosis.severity,
+      comorbidities: feed.diagnosis.comorbidities,
+    },
+    procedures: feed.procedures.map(p => ({
+      id: p.id,
+      code: p.icd9_code,
+      name: p.name,
+      category: p.category,
+      date: p.performed_date,
+      conformance: p.conformance,
+      cost: p.unit_cost,
+      qty: p.quantity,
+      tariff: p.tariff_type,
+    })),
+    medications: feed.medications.map(m => ({
+      id: m.id,
+      name: m.drug_name,
+      generic: m.generic_name,
+      route: m.route,
+      dosage: m.dosage,
+      frequency: m.frequency,
+      days: m.duration_days,
+      formulary: m.formulary,
+      conformance: m.conformance,
+      cost: m.unit_cost,
+      qty: m.quantity,
+    })),
+    inpatient: feed.inpatient,
+    outcome: feed.outcome,
+    masterDataValidation: feed.masterDataValidation,
+  }
+  return JSON.stringify(compressed)
 }
 
 async function parseBrainOutput(rawText: string, feed: AiSummaryFeed): Promise<AiClinicalPathwayBrainOutput> {
@@ -358,11 +415,11 @@ async function repairBrainJson(rawJson: string, parseError: unknown): Promise<st
     messages: [
       {
         role: 'system',
-        content: 'Anda adalah JSON repair engine. Kembalikan hanya JSON valid, tanpa markdown, tanpa komentar. Jangan mengubah makna klinis. Perbaiki string yang tidak tertutup, escape newline/quote, koma, dan bracket agar JSON.parse berhasil.',
+        content: 'You are a JSON repair engine. Return only valid JSON, no markdown, no comments. Do not alter clinical meaning. Fix unclosed strings, escape newlines/quotes, commas, and brackets so JSON.parse succeeds.',
       },
       {
         role: 'user',
-        content: `JSON berikut gagal diparse dengan error: ${parseError instanceof Error ? parseError.message : 'unknown error'}\n\nPerbaiki menjadi JSON valid lengkap:\n${rawJson}`,
+        content: `The following JSON failed to parse with error: ${parseError instanceof Error ? parseError.message : 'unknown error'}\n\nRepair into valid complete JSON:\n${rawJson}`,
       },
     ],
   })
