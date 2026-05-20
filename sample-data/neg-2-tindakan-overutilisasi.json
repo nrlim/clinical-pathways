@@ -94,7 +94,9 @@
     "inpatient": {
       "is_inpatient_indicated": true,
       "justification_reason": "Trombosit turun",
-      "clinical_criteria_met": ["Memerlukan monitoring ketat 24 jam"],
+      "clinical_criteria_met": [
+        "Memerlukan monitoring ketat 24 jam"
+      ],
       "los_conformance": "sesuai",
       "los_deviation_reason": "",
       "discharge_criteria": "",

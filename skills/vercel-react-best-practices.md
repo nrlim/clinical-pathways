@@ -1,4 +1,4 @@
-# React Best Practices (Clinical Pathway App)
+# React Best Practices (SnapPath App)
 
 > **Agent Directive**: Read this file before writing any React component. Apply every rule listed here — they are enforced constraints.
 
@@ -155,7 +155,7 @@ export function usePatientLookup(): UsePatientLookupReturn {
 
 ## 5. Form Handling
 
-For complex forms (like Clinical Pathway), use React's controlled component pattern with proper validation:
+For complex forms (like SnapPath), use React's controlled component pattern with proper validation:
 
 ```tsx
 "use client"

@@ -20,6 +20,7 @@ export interface DiagnosisValidation {
   name: string
   status: ValidationStatus
   masterName: string | null
+  expectedLos: number | null
   note: string
 }
 
@@ -121,7 +122,7 @@ async function validateDiagnosis(code: string, name: string): Promise<DiagnosisV
   const trimmed = code.trim().toUpperCase()
 
   if (!trimmed) {
-    return { code, name, status: 'not_found', masterName: null, note: 'Kode diagnosa tidak diisi.' }
+    return { code, name, status: 'not_found', masterName: null, expectedLos: null, note: 'Kode diagnosa tidak diisi.' }
   }
 
   const master = await prisma.masterDiagnosis.findFirst({
@@ -130,21 +131,22 @@ async function validateDiagnosis(code: string, name: string): Promise<DiagnosisV
 
   if (!master) {
     return {
-      code, name, status: 'not_found', masterName: null,
+      code, name, status: 'not_found', masterName: null, expectedLos: null,
       note: `Kode ICD-10 "${code}" tidak ditemukan di Master Data. Perlu verifikasi manual.`,
     }
   }
 
   if (!master.isActive) {
     return {
-      code, name, status: 'not_active', masterName: master.name,
+      code, name, status: 'not_active', masterName: master.name, expectedLos: master.expectedLos ? Number(master.expectedLos) : null,
       note: `Diagnosa "${master.name}" tidak aktif di sistem Master Data.`,
     }
   }
 
+  const expectedLos = master.expectedLos ? Number(master.expectedLos) : null
   return {
-    code, name, status: 'valid', masterName: master.name,
-    note: `Ditemukan: ${master.name}. ${master.description ?? ''}`,
+    code, name, status: 'valid', masterName: master.name, expectedLos,
+    note: `Ditemukan: ${master.name}. Standar LOS: ${expectedLos != null ? `${expectedLos} hari` : 'tidak diset'}. ${master.description ?? ''}`,
   }
 }
 

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     const cause = error instanceof Error && 'cause' in error ? error.cause : undefined
-    console.error('Workflow Start Error:', error, cause)
+    console.error('[AI Brain API] Workflow Start Error:', error instanceof Error ? error.message : 'unknown', cause instanceof Error ? cause.message : cause)
     return NextResponse.json(
       { message: error instanceof Error ? error.message : 'Gagal memulai workflow clinical pathway.' },
       { status: 502 },

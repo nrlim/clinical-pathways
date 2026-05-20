@@ -106,8 +106,8 @@ import { PathwaySchema } from '@/lib/validations/pathway'
 
 export async function createPathway(formData: FormData) {
   const validated = PathwaySchema.parse(Object.fromEntries(formData))
-  // call Satu Sehat API here — server-side only
-  await satuSehatClient.createCarePlan(validated)
+  // call your backend or external API here — server-side only
+  await db.carePlan.create({ data: validated })
   revalidatePath('/pathway')
 }
 ```
@@ -132,11 +132,11 @@ export async function GET(request: NextRequest) {
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Clinical Pathway | Satu Sehat',
-  description: 'Manage clinical pathways integrated with the Satu Sehat platform.',
+  title: 'SnapPath System',
+  description: 'Manage SnapPath efficiently.',
   openGraph: {
-    title: 'Clinical Pathway',
-    description: 'National health platform clinical pathway management.',
+    title: 'SnapPath',
+    description: 'SnapPath management system.',
   },
 }
 ```
@@ -152,8 +152,8 @@ export const metadata: Metadata = {
 
 ```env
 # .env.local
-SATU_SEHAT_CLIENT_ID=xxx         # ✅ Server-only
-SATU_SEHAT_CLIENT_SECRET=xxx     # ✅ Server-only
+DB_PASSWORD=xxx                  # ✅ Server-only
+API_SECRET_KEY=xxx               # ✅ Server-only
 NEXT_PUBLIC_APP_URL=http://localhost:3000  # ✅ OK to be public
 ```
 

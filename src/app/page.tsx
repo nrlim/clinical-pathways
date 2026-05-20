@@ -1,19 +1,19 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
-import { FileText, FolderOpen, Database, ChevronLeft, ChevronRight, Download, Zap, Clock, BarChart2, ClipboardCheck, BrainCircuit, DownloadCloud, Inbox, Filter, Search, RefreshCw, Edit2 } from 'lucide-react'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { FileText, FolderOpen, Database, ChevronLeft, ChevronRight, Download, Zap, Clock, BarChart2, ClipboardCheck, BrainCircuit, DownloadCloud, Inbox, Filter, Search, RefreshCw, Edit2, Settings, ArrowRight } from 'lucide-react'
 import { PatientSectionForm, EncounterSectionForm } from '@/components/pathway/PatientEncounterSections'
 import { DiagnosisSectionForm, ProcedureSectionForm, MedicationSectionForm, InpatientJustificationForm } from '@/components/pathway/ClinicalSections'
-import { AiClinicalPathwayReport, OutcomeSectionForm, SummaryPanel } from '@/components/pathway/OutcomeSummary'
-import { MasterDataCrosscheck } from '@/components/pathway/MasterDataCrosscheck'
+import { AiClinicalPathwayReport, OutcomeSectionForm, SummaryPanel, AiValidationBoard } from '@/components/pathway/OutcomeSummary'
 import { MasterDataPanel } from '@/components/master-data/MasterDataPanel'
+import { SettingsForm } from '@/components/settings/SettingsForm'
 import { WorkflowProgressTracker, WorkflowBubble } from '@/components/workflow/WorkflowProgressTracker'
 import { computeSummary, formatRupiah } from '@/lib/pathway-utils'
 import type { ClinicalPathwayForm, ClinicalMasterData, AiSummaryFeed } from '@/types/clinical-pathway'
 import type { AiClinicalPathwayBrainOutput, AiClinicalPathwayResponse } from '@/types/ai-clinical-pathway'
 import type { WorkflowStepState } from '@/components/workflow/WorkflowProgressTracker'
 
-type AppView = 'form' | 'history' | 'master-data'
+type AppView = 'form' | 'history' | 'master-data' | 'settings'
 
 
 interface ClinicalPathwayRecordListItem {
@@ -81,10 +81,10 @@ const INITIAL: ClinicalPathwayForm = {
 
 // Workflow step definitions for the progress tracker
 const WORKFLOW_STEPS = [
-  { id: 'buildFeed',       label: 'Build AI Feed',         sublabel: 'Menyusun data form dan master data' },
-  { id: 'validateMaster', label: 'Validasi Master Data',   sublabel: 'Cross-check diagnosa, tindakan, obat' },
-  { id: 'callBrainAi',    label: 'Brain AI Generation',    sublabel: 'Memanggil SumoPod AI (maks. 3x retry)' },
-  { id: 'saveToDb',       label: 'Simpan Hasil',           sublabel: 'Menyimpan ke database' },
+  { id: 'buildFeed', label: 'Build Data Feed', sublabel: 'Menyusun data form dan katalog standar' },
+  { id: 'validateMaster', label: 'Validasi Katalog Standar', sublabel: 'Cross-check diagnosa, tindakan, obat' },
+  { id: 'callBrainAi', label: 'Pemrosesan AI', sublabel: 'Menganalisis kesesuaian pathway klinis' },
+  { id: 'saveToDb', label: 'Simpan Hasil', sublabel: 'Menyimpan ke database' },
 ]
 
 const POLL_INTERVAL_MS = 2000 // 2-second polling interval
@@ -99,6 +99,17 @@ export default function ClinicalPathwayPage() {
   const [brainResponse, setBrainResponse] = useState<AiClinicalPathwayResponse | null>(null)
   const [feedData, setFeedData] = useState<AiSummaryFeed | null>(null)
   const [view, setView] = useState<AppView>('form')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const tab = params.get('view')
+      if (tab === 'history' || tab === 'master-data' || tab === 'settings') {
+        setView(tab as AppView)
+        // Clean URL to not show param if desired, or keep it. Let's keep it.
+      }
+    }
+  }, [])
   const [summaryTab, setSummaryTab] = useState<'summary' | 'crosscheck' | 'clinical'>('summary')
   const [historyRecords, setHistoryRecords] = useState<ClinicalPathwayRecordListItem[]>([])
   const [recordsMessage, setRecordsMessage] = useState('')
@@ -129,7 +140,7 @@ export default function ClinicalPathwayPage() {
       try {
         const json = JSON.parse(event.target?.result as string)
         const data = json.form_data || json
-        
+
         if (!data.patient || !data.encounter) {
           throw new Error('Format JSON tidak valid (missing patient/encounter).')
         }
@@ -336,13 +347,13 @@ export default function ClinicalPathwayPage() {
         <aside className="app-sidebar-nav">
           <div className="app-sidebar-sticky-wrapper" style={{ position: 'relative' }}>
             {/* Toggle button — ear on right edge */}
-            <button 
+            <button
               className="sidebar-toggle-btn"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               aria-label={isSidebarOpen ? 'Tutup Sidebar' : 'Buka Sidebar'}
             >
-              {isSidebarOpen 
-                ? <ChevronLeft size={11} strokeWidth={2.5} /> 
+              {isSidebarOpen
+                ? <ChevronLeft size={11} strokeWidth={2.5} />
                 : <ChevronRight size={11} strokeWidth={2.5} />}
             </button>
 
@@ -352,8 +363,7 @@ export default function ClinicalPathwayPage() {
                 <div className="app-sidebar-brand">
                   <div className="app-sidebar-logo-glow">CP</div>
                   <div className="app-sidebar-title">
-                    Clinical Pathway
-                    <span>Satu Sehat Portal</span>
+                    SnapPath
                   </div>
                 </div>
               </div>
@@ -361,29 +371,37 @@ export default function ClinicalPathwayPage() {
               <div className="app-sidebar-menu-label">Navigasi</div>
 
               <nav className="app-sidebar-menu">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={`app-sidebar-item ${view === 'form' ? 'active' : ''}`}
                   onClick={() => setView('form')}
                 >
                   <span className="app-sidebar-item-icon"><FileText /></span>
                   <span>Input Form</span>
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={`app-sidebar-item ${view === 'history' ? 'active' : ''}`}
                   onClick={() => { setView('history'); void loadHistoryRecords() }}
                 >
                   <span className="app-sidebar-item-icon"><FolderOpen /></span>
                   <span>Clinical Pathways</span>
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={`app-sidebar-item ${view === 'master-data' ? 'active' : ''}`}
                   onClick={() => setView('master-data')}
                 >
                   <span className="app-sidebar-item-icon"><Database /></span>
-                  <span>Master Data</span>
+                  <span>Katalog Standar</span>
+                </button>
+                <button
+                  type="button"
+                  className={`app-sidebar-item ${view === 'settings' ? 'active' : ''}`}
+                  onClick={() => setView('settings')}
+                >
+                  <span className="app-sidebar-item-icon"><Settings /></span>
+                  <span>Pengaturan</span>
                 </button>
               </nav>
             </div>
@@ -394,14 +412,17 @@ export default function ClinicalPathwayPage() {
 
         {/* Main Content Area */}
         <main className="page-content animate-in">
+          {view === 'settings' && (
+            <SettingsForm />
+          )}
           {view === 'history' && (
-            <HistoryPanel 
-              records={historyRecords} 
-              message={recordsMessage} 
+            <HistoryPanel
+              records={historyRecords}
+              message={recordsMessage}
               onOpen={(id) => {
                 setView('form');
                 void openSavedClinicalPathway(id);
-              }} 
+              }}
               search={historySearch}
               onSearchChange={(val) => setHistorySearch(val)}
               sort={historySort}
@@ -438,7 +459,7 @@ export default function ClinicalPathwayPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
                     <button className="btn btn-ghost" style={{ cursor: 'pointer', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', background: 'var(--bg-surface)', padding: '10px 18px', fontWeight: 600, borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '6px' }}
                       onClick={() => {
@@ -491,21 +512,21 @@ export default function ClinicalPathwayPage() {
                   <div style={{ textAlign: 'left' }}>
                     <div className="summary-tabs-container" style={{ marginBottom: 'var(--space-6)' }}>
                       <div className="summary-tabs">
-                        <button 
+                        <button
                           type="button"
                           className={`summary-tab ${summaryTab === 'summary' ? 'active' : ''}`}
                           onClick={() => setSummaryTab('summary')}
                         >
                           <span className="summary-tab-icon"><BarChart2 size={16} /></span> Ringkasan Validasi
                         </button>
-                        <button 
+                        <button
                           type="button"
                           className={`summary-tab ${summaryTab === 'crosscheck' ? 'active' : ''}`}
                           onClick={() => setSummaryTab('crosscheck')}
                         >
-                          <span className="summary-tab-icon"><ClipboardCheck size={16} /></span> Master Data Crosscheck
+                          <span className="summary-tab-icon"><ClipboardCheck size={16} /></span> Validasi Administrasi & Biaya
                         </button>
-                        <button 
+                        <button
                           type="button"
                           className={`summary-tab ${summaryTab === 'clinical' ? 'active' : ''}`}
                           onClick={() => setSummaryTab('clinical')}
@@ -523,25 +544,14 @@ export default function ClinicalPathwayPage() {
 
                     {summaryTab === 'crosscheck' && (
                       <div className="fade-in animate-in">
-                        <MasterDataCrosscheck
-                          form={form}
-                          procedureLookups={Object.fromEntries(
-                            (feedData?.masterDataValidation?.procedures ?? []).map((p) => [
-                              p.code,
-                              p.status !== 'not_found'
-                                ? { name: p.masterName ?? p.code, code: p.code, baseTariff: p.masterTariff ?? null }
-                                : null,
-                            ])
-                          )}
-                          medicationLookups={Object.fromEntries(
-                            (feedData?.masterDataValidation?.medications ?? []).map((m) => [
-                              m.name,
-                              m.status !== 'not_found'
-                                ? { name: m.masterName ?? m.name, code: m.id, baseTariff: m.masterTariff ?? null }
-                                : null,
-                            ])
-                          )}
-                        />
+                        {brainResponse ? (
+                          <AiValidationBoard result={brainResponse.result} />
+                        ) : (
+                          <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                            <ClipboardCheck size={48} style={{ opacity: 0.2, marginBottom: 'var(--space-3)', display: 'inline-block' }} />
+                            <p>Data validasi belum tersedia. Silakan submit form terlebih dahulu.</p>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -577,7 +587,7 @@ export default function ClinicalPathwayPage() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <label className="stepper-import-btn" title="Import Sample JSON" style={{ margin: 0, marginBottom: '2px' }}>
                       <DownloadCloud size={15} />
                       <span>Import JSON</span>
@@ -754,9 +764,9 @@ function HistoryPanel({
           </div>
         </div>
       </div>
-      
+
       <div className="table-responsive" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', overflowX: 'auto', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-        
+
         {/* Unified Tools & Filter Header */}
         <div style={{ padding: 'var(--space-5)', borderBottom: '2px solid var(--bg-base)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-5)' }}>
@@ -775,24 +785,24 @@ function HistoryPanel({
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
-            <form 
+            <form
               style={{ position: 'relative', flex: '1 1 300px', minWidth: '250px' }}
               onSubmit={(e) => { e.preventDefault(); onSearchSubmit(); }}
             >
               <Search size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                className="form-input" 
-                placeholder="Cari NIK, pasien, atau pathway..." 
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Cari NIK, pasien, atau pathway..."
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
                 style={{ paddingLeft: '44px', margin: 0, width: '100%', borderRadius: 'var(--radius-md)' }}
               />
             </form>
-            
-            <select 
-              className="form-select" 
-              value={sort} 
+
+            <select
+              className="form-select"
+              value={sort}
               onChange={(e) => onSortChange(e.target.value)}
               style={{ margin: 0, minWidth: '220px', borderRadius: 'var(--radius-md)' }}
             >
@@ -820,32 +830,39 @@ function HistoryPanel({
             {records.map((record) => {
               const scoreColor = record.validationScore >= 80 ? 'var(--color-success-700)' : record.validationScore >= 50 ? 'var(--color-warning-700)' : 'var(--color-danger-700)';
               const scoreBg = record.validationScore >= 80 ? 'var(--color-success-50)' : record.validationScore >= 50 ? 'var(--color-warning-50)' : 'var(--color-danger-50)';
-              const isWarning = record.validationScore < 80;
-              
+
               return (
                 <tr key={record.id} onClick={() => onOpen(record.id)} className="table-row-hover" style={{ borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer', transition: 'all var(--transition-fast)' }}>
-                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'top' }}>
+                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'middle' }}>
                     <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', fontSize: '0.9rem' }}>{record.patientName}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{record.nik}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      NIK: {record.nik}
+                      {record.mrNumber && <span style={{ marginLeft: '6px' }}>• MR: <span style={{ fontWeight: 600 }}>{record.mrNumber}</span></span>}
+                    </div>
                   </td>
-                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'top' }}>
-                    <div style={{ display: 'inline-block', padding: '2px 8px', background: 'var(--color-success-50)', color: 'var(--color-success-700)', border: '1px solid var(--color-success-200)', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', fontWeight: 700, marginBottom: '6px' }}>
+                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'middle' }}>
+                    <div style={{ display: 'inline-block', padding: '2px 6px', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', fontWeight: 700, marginBottom: '6px' }}>
                       {record.diagnosisCode}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{record.diagnosisName}</div>
                   </td>
-                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'top' }}>
-                    <div style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: '4px', fontSize: '0.85rem' }}>{record.pathwayName}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Biaya: <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{formatRupiah(Number(record.totalFlaggedCost) || 0)}</span> • Tgl: {new Date(record.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
+                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'middle' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', fontSize: '0.85rem' }}>{record.pathwayName}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span>Biaya Review: {Number(record.totalFlaggedCost) > 0 ? <span style={{ fontWeight: 700, color: 'var(--color-danger-600)' }}>{formatRupiah(Number(record.totalFlaggedCost))}</span> : <span style={{ fontWeight: 600, color: 'var(--color-success-600)' }}>Aman (Rp 0)</span>}</span>
+                      <span>• {new Date(record.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
                   </td>
-                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'top', textAlign: 'center' }}>
-                    <span style={{ display: 'inline-flex', padding: '4px 12px', background: scoreBg, color: scoreColor, borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                      {isWarning ? 'REVIEW' : 'SESUAI'}
-                    </span>
+                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'middle', textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      <span style={{ display: 'inline-flex', padding: '4px 10px', background: scoreBg, color: scoreColor, borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${scoreColor}` }}>
+                        {record.overallStatus === 'sesuai' ? 'Sesuai' : record.overallStatus === 'perlu_review' ? 'Perlu Review' : record.overallStatus === 'tidak_sesuai' ? 'Tidak Sesuai' : 'Data Kurang'}
+                      </span>
+                    </div>
                   </td>
-                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'top', textAlign: 'right' }}>
-                    <button className="btn btn-ghost btn-sm" style={{ padding: '4px 12px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-primary-600)', background: 'var(--color-primary-50)', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-primary-100)' }}>
-                      <Edit2 size={12} style={{ marginRight: '6px', display: 'inline-block' }} /> Detail
+                  <td style={{ padding: 'var(--space-4) var(--space-5)', verticalAlign: 'middle', textAlign: 'right' }}>
+                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 14px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-primary-700)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)' }}>
+                      Detail <ArrowRight size={14} style={{ marginLeft: '4px', display: 'inline-block', verticalAlign: 'middle' }} />
                     </button>
                   </td>
                 </tr>
@@ -853,7 +870,7 @@ function HistoryPanel({
             })}
           </tbody>
         </table>
-        
+
         {records.length === 0 && (
           <div className="empty-state" style={{ padding: 'var(--space-12) 0', textAlign: 'center' }}>
             <div className="empty-icon" style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-3)', display: 'flex', justifyContent: 'center' }}><Inbox size={48} /></div>
@@ -868,17 +885,17 @@ function HistoryPanel({
               Menampilkan halaman <strong style={{ color: 'var(--text-primary)' }}>{page}</strong> dari <strong style={{ color: 'var(--text-primary)' }}>{totalPages}</strong>
             </span>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <button 
-                className="btn btn-ghost btn-sm" 
-                onClick={() => onPageChange(page - 1)} 
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => onPageChange(page - 1)}
                 disabled={page <= 1}
                 style={{ border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', padding: '6px 14px', fontSize: '0.85rem', fontWeight: 600, background: 'var(--bg-surface)' }}
               >
                 <ChevronLeft size={16} style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} /> Prev
               </button>
-              <button 
-                className="btn btn-ghost btn-sm" 
-                onClick={() => onPageChange(page + 1)} 
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => onPageChange(page + 1)}
                 disabled={page >= totalPages}
                 style={{ border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', padding: '6px 14px', fontSize: '0.85rem', fontWeight: 600, background: 'var(--bg-surface)' }}
               >
@@ -898,7 +915,7 @@ function BrainAiLoading() {
   const stages = [
     'Membaca form klinis',
     'Validasi diagnosis, tindakan, dan obat',
-    'Mencocokkan master data lokal',
+    'Mencocokkan katalog standar lokal',
     'Menyusun visual clinical pathway',
   ]
 
@@ -912,10 +929,10 @@ function BrainAiLoading() {
         </div>
         <div>
           <div className="brain-loading-kicker">Brain AI sedang bekerja</div>
-          <h2>Memproses clinical pathway dan validasi master data</h2>
+          <h2>Memproses clinical pathway dan validasi katalog standar</h2>
           <p>
-            Sistem sedang menganalisis data pasien, diagnosis, tindakan, obat, biaya,
-            dan master data untuk membuat summary visual yang siap direview klinisi.
+            Sistem sedang mengevaluasi input yang dikirim berdasarkan basis pengetahuan medis
+            dan katalog standar untuk membuat summary visual yang siap direview klinisi.
           </p>
         </div>
         <div className="brain-loading-progress">

@@ -95,7 +95,9 @@
     "inpatient": {
       "is_inpatient_indicated": true,
       "justification_reason": "Nyeri abdomen akut, indikasi operasi cito",
-      "clinical_criteria_met": ["Tindakan pembedahan / prosedural kompleks"],
+      "clinical_criteria_met": [
+        "Tindakan pembedahan / prosedural kompleks"
+      ],
       "los_conformance": "sesuai",
       "los_deviation_reason": "",
       "discharge_criteria": "",

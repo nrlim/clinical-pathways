@@ -81,7 +81,9 @@
     "inpatient": {
       "is_inpatient_indicated": true,
       "justification_reason": "Hipertensi emergensi",
-      "clinical_criteria_met": ["Kondisi tidak stabil / deteriorasi klinis"],
+      "clinical_criteria_met": [
+        "Kondisi tidak stabil / deteriorasi klinis"
+      ],
       "los_conformance": "sesuai",
       "los_deviation_reason": "",
       "discharge_criteria": "",

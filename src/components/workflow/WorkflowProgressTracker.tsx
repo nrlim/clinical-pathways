@@ -68,7 +68,7 @@ export function WorkflowProgressTracker({
                 <span /><span /><span />
               </div>
               <div>
-                <div className="workflow-tracker-title">Brain AI sedang berjalan</div>
+                <div className="workflow-tracker-title">Sedang Memproses…</div>
                 <div className="workflow-tracker-subtitle">
                   Langkah {Math.min(currentStepIndex + 1, totalSteps)}/{totalSteps} — {steps[currentStepIndex]?.sublabel ?? 'Memproses...'}
                 </div>
@@ -176,7 +176,7 @@ export function WorkflowBubble({
         )}
         <div className="workflow-bubble-text">
           <span className="workflow-bubble-title">
-            {isError ? 'Workflow Gagal' : 'Brain AI Berjalan…'}
+            {isError ? 'Workflow Gagal' : 'Sedang Memproses…'}
           </span>
           <span className="workflow-bubble-sub">
             {isError ? 'Klik untuk detail' : `Langkah ${Math.min(currentStepIndex + 1, totalSteps)}/${totalSteps} — ${stepLabel}`}

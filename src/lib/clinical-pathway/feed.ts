@@ -1,5 +1,6 @@
 import type { ClinicalPathwayForm, ClinicalMasterData, AiSummaryFeed } from '@/types/clinical-pathway'
 import { validateFormAgainstMasterData } from '@/lib/clinical-pathway/master-data-validator'
+import { getThresholds } from '@/lib/settings'
 
 export function buildManualMasterData(form: ClinicalPathwayForm): ClinicalMasterData {
   return {
@@ -28,6 +29,8 @@ export async function buildAiSummaryFeed(
 ): Promise<AiSummaryFeed> {
   // Cross-check all form items against the Master Data database tables
   const masterDataValidation = await validateFormAgainstMasterData(form)
+  // Fetch thresholds configurations
+  const thresholds = await getThresholds()
 
   return {
     patient: form.patient,
@@ -39,5 +42,7 @@ export async function buildAiSummaryFeed(
     outcome: form.outcome,
     masterDataSnapshot: masterData,
     masterDataValidation,
+    thresholds,
   }
 }
+

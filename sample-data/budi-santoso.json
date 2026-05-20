@@ -16,7 +16,7 @@
       "encounter_class": "inpatient",
       "admission_date": "2026-05-18",
       "admission_time": "09:30",
-      "discharge_date": "2026-05-22",
+      "discharge_date": "2026-05-23",
       "discharge_time": "14:00",
       "ward": "I",
       "room_number": "Melati-01",
@@ -101,10 +101,10 @@
       "los_conformance": "sesuai",
       "los_deviation_reason": "",
       "discharge_criteria": "Demam turun, sesak hilang, klinis stabil.",
-      "discharge_condition": "pulang_sembuh"
+      "discharge_condition": "Membaik"
     },
     "outcome": {
-      "outcome": "sembuh",
+      "outcome": "improved",
       "readmission_risk": "rendah",
       "clinical_notes": "Pasien pulang dalam keadaan baik.",
       "follow_up_plan": "Kontrol poli rawat jalan 1 minggu lagi.",

@@ -47,6 +47,8 @@ export interface AiValidationDashboard {
   reviewCount: number
   failedCount: number
   totalFlaggedCost: number
+  actualLos?: number
+  expectedLos?: number
   quickFindings: string[]
   validatedItems: AiValidatedClinicalItem[]
 }

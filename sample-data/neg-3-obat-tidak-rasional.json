@@ -96,7 +96,9 @@
     "inpatient": {
       "is_inpatient_indicated": true,
       "justification_reason": "Dehidrasi ringan",
-      "clinical_criteria_met": ["Dehidrasi berat / gangguan elektrolit"],
+      "clinical_criteria_met": [
+        "Dehidrasi berat / gangguan elektrolit"
+      ],
       "los_conformance": "sesuai",
       "los_deviation_reason": "",
       "discharge_criteria": "",

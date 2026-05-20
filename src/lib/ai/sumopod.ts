@@ -35,8 +35,8 @@ export interface SumoPodCompletionInput {
 const DEFAULT_SUMOPOD_BASE_URL = 'https://ai.sumopod.com/v1'
 const DEFAULT_SUMOPOD_MODEL = 'gpt-4o-mini'
 
-export function getSumoPodModel(): string {
-  return process.env.SUMOPOD_MODEL ?? DEFAULT_SUMOPOD_MODEL
+export function getSumoPodModel(dbModel?: string): string {
+  return dbModel ?? process.env.SUMOPOD_MODEL ?? DEFAULT_SUMOPOD_MODEL
 }
 
 export async function createSumoPodChatCompletion(input: SumoPodCompletionInput): Promise<string> {
@@ -137,12 +137,12 @@ async function requestSumoPodCompletion(
       return await fetch(endpoint, options)
     } catch (error) {
       lastError = error
-      console.warn(`[SumoPod] Fetch attempt ${attempt} failed:`, (error as any)?.message || error)
+      console.warn(`[SumoPod] Fetch attempt ${attempt} gagal:`, (error instanceof Error ? error.message : String(error)))
       if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 1000))
     }
   }
 
-  throw new Error(`Koneksi ke Brain AI gagal setelah 3 percobaan. Detail: ${(lastError as any)?.message || 'fetch failed'}`)
+  throw new Error(`Koneksi ke Brain AI gagal setelah 3 percobaan. Detail: ${lastError instanceof Error ? lastError.message : 'fetch failed'}`)
 }
 
 function extractContent(payload: SumoPodChatResponse): string | null {

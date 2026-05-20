@@ -72,10 +72,10 @@
       "los_conformance": "tidak",
       "los_deviation_reason": "",
       "discharge_criteria": "",
-      "discharge_condition": "pulang_aps"
+      "discharge_condition": "DAMA"
     },
     "outcome": {
-      "outcome": "pulang_aps",
+      "outcome": "dama",
       "readmission_risk": "tinggi",
       "clinical_notes": "Pasien pulang paksa",
       "follow_up_plan": "",

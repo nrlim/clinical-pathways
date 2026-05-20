@@ -10,13 +10,13 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Clinical Pathway | AI Integration',
+  title: 'SnapPath | AI Integration',
   description:
-    'Sistem manajemen clinical pathway terintegrasi dengan platform master data lokal. Digitalisasi rekam medis, validasi diagnosa, tindakan, dan obat secara komprehensif.',
-  keywords: ['clinical pathway', 'rekam medis', 'ICD-10'],
+    'Sistem manajemen SnapPath terintegrasi dengan platform katalog standar lokal. Digitalisasi rekam medis, validasi diagnosa, tindakan, dan obat secara komprehensif.',
+  keywords: ['SnapPath', 'clinical pathway', 'rekam medis', 'ICD-10'],
   openGraph: {
-    title: 'Clinical Pathway | AI Integration',
-    description: 'Digitalisasi dan validasi clinical pathway terintegrasi master data.',
+    title: 'SnapPath | AI Integration',
+    description: 'Digitalisasi dan validasi clinical pathway terintegrasi katalog standar.',
     locale: 'id_ID',
     type: 'website',
   },

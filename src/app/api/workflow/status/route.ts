@@ -74,9 +74,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<WorkflowSt
     // running / pending / any other status
     return NextResponse.json({ status: 'running' })
   } catch (error) {
-    console.error('Workflow status check error:', error)
+    console.error('[Workflow Status API] error:', error instanceof Error ? error.message : 'unknown error')
     return NextResponse.json(
-      { status: 'failed', error: error instanceof Error ? error.message : 'Gagal memeriksa status workflow.' },
+      { status: 'failed', error: 'Terjadi kesalahan internal. Silakan coba lagi.' },
       { status: 500 },
     )
   }

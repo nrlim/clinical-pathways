@@ -5,11 +5,11 @@ import type {
   AiValidatedClinicalItem,
   AiValidationStatus,
 } from '@/types/ai-clinical-pathway'
-import { createSumoPodChatCompletion, getSumoPodModel } from './sumopod'
+import { callAi } from './ai-router'
 
 export async function generateClinicalPathwayBrain(feed: AiSummaryFeed): Promise<AiClinicalPathwayResponse> {
   const startedAt = Date.now()
-  const rawText = await createSumoPodChatCompletion({
+  const aiResult = await callAi({
     temperature: 0.1,
     // maxTokens: batas output — model berhenti saat selesai, bukan saat mencapai limit.
     // 8000 mencegah truncation JSON schema besar tanpa memperlambat response.
@@ -25,17 +25,21 @@ export async function generateClinicalPathwayBrain(feed: AiSummaryFeed): Promise
   })
   const latencyMs = Date.now() - startedAt
 
+  const modelLabel = aiResult.usedFallback
+    ? `${aiResult.model} (fallback via Vercel AI Gateway)`
+    : aiResult.model
+
   return {
-    result: await parseBrainOutput(rawText, feed),
-    rawText,
-    model: getSumoPodModel(),
+    result: await parseBrainOutput(aiResult.content, feed),
+    rawText: aiResult.content,
+    model: modelLabel,
     generatedAt: new Date().toISOString(),
     latencyMs,
   }
 }
 
 function buildSystemPrompt(): string {
-  return `You are a Clinical Pathway Brain AI for Indonesian hospitals.
+  return `You are a SnapPath Brain AI for Indonesian hospitals.
 Act as a multidisciplinary team: DPJP, nurse, pharmacist, case manager, INA-CBGs coder.
 
 Rules:
@@ -55,6 +59,10 @@ Rules:
 function buildUserPrompt(feed: AiSummaryFeed): string {
   const schema = `{"executiveSummary":"str","clinicalSynopsis":"str","workingAssessment":"str","pathwayName":"str","careGoals":["str"],"validationDashboard":{"overallStatus":"sesuai|tidak_sesuai|perlu_review|data_kurang","score":0,"passedCount":0,"reviewCount":0,"failedCount":0,"totalFlaggedCost":0,"quickFindings":["str"],"validatedItems":[{"id":"str","type":"procedure|medication","code":"str","name":"str","status":"sesuai|tidak_sesuai|perlu_review|data_kurang","diagnosisRelation":"str","masterDataValidation":"str","unitCost":0,"quantity":0,"totalCost":0,"priceAssessment":"str","issue":"str","recommendedAction":"str"}]},"dayByDayPlan":[{"day":"str","focus":"str","assessments":["str"],"interventions":["str"],"medicationConsiderations":["str"],"monitoring":["str"],"dischargeCriteria":["str"]}],"conformanceAnalysis":{"diagnosisProcedureFit":"str","diagnosisMedicationFit":"str","inpatientJustification":"str","losAssessment":"str","costSignal":"str"},"riskStratification":[{"level":"rendah|sedang|tinggi|kritis","issue":"str","rationale":"str","recommendedAction":"str"}],"pathwayVariances":[{"area":"str","observedVariance":"str","potentialImpact":"str","recommendedFollowUp":"str"}],"dischargeReadiness":{"status":"belum_siap|perlu_review|siap|tidak_dinilai","criteriaMet":["str"],"blockers":["str"],"followUpPlan":"str","patientEducation":"str"},"masterDataMapping":{"patientReference":"str","suggestedResources":["str"],"missingMasterData":["str"]},"aiSummaryForClinician":"str","aiSummaryForCoder":"str","aiSummaryForPatient":"str","safetyNotes":["str"],"dataQualityIssues":["str"]}`
 
+  const actualLos = calculateActualLos(feed.encounter.admission_date, feed.encounter.discharge_date)
+  const expectedLos = feed.masterDataValidation.primaryDiagnosis.expectedLos
+  const targetLos = Math.min(Math.max(actualLos || Number(feed.encounter.expected_los) || expectedLos || 3, 1), 7)
+
   const compressedFeed = buildCompressedFeed(feed)
 
   return `Generate a clinical pathway from the feed below. Return valid JSON matching this exact schema:
@@ -63,7 +71,7 @@ ${schema}
 Instructions:
 1. executiveSummary: concise but complete clinical executive summary (condition, plan, outlook).
 2. clinicalSynopsis: full clinical narrative (disease course, current status, relevant factors).
-3. dayByDayPlan: daily care plan per LOS from feed — MAX 7 days. Each day must have specific, operational (not generic) assessments, interventions, medicationConsiderations, monitoring, and dischargeCriteria.
+3. dayByDayPlan: Generate EXACTLY ${targetLos} entries — one per hospitalization day, labeled "Hari 1" through "Hari ${targetLos}". Days 1 through ${targetLos - 1} must contain active clinical content (assessments, interventions, medications, monitoring). "Hari ${targetLos}" is ALWAYS the discharge day (focus: "Discharge") with final assessment, discharge planning, take-home medications, and discharge criteria. Do NOT place discharge content on any day earlier than "Hari ${targetLos}". Every entry must have at least one non-empty array.
 4. validatedItems: validate EVERY procedure/medication using "masterDataValidation" in feed. Use same "id" from feed. If status=valid: use masterName as name, masterTariff as unitCost reference. If status=not_found: mark perlu_review, log in issue+dataQualityIssues. If status=not_active: mark tidak_sesuai.
 5. Mark "tidak_sesuai" if item is clinically unrelated to diagnosis or conformance=tidak.
 6. Compute validationDashboard: accurate score 0-100, counts, totalFlaggedCost from all non-sesuai items.
@@ -133,8 +141,18 @@ function buildCompressedFeed(feed: AiSummaryFeed): string {
     inpatient: feed.inpatient,
     outcome: feed.outcome,
     masterDataValidation: feed.masterDataValidation,
+    thresholds: feed.thresholds,
   }
   return JSON.stringify(compressed)
+}
+
+function calculateActualLos(admissionDate: string, dischargeDate: string): number {
+  if (!admissionDate || !dischargeDate) return 0
+  const start = new Date(admissionDate)
+  const end = new Date(dischargeDate)
+  const diffTime = Math.abs(end.getTime() - start.getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return diffDays || 1
 }
 
 async function parseBrainOutput(rawText: string, feed: AiSummaryFeed): Promise<AiClinicalPathwayBrainOutput> {
@@ -182,8 +200,9 @@ function enforceMasterDataValidation(
       validationStatus: validation?.status ?? 'not_found',
       masterName: validation?.masterName ?? null,
       masterTariff: validation?.masterTariff ?? null,
-      validationNote: validation?.note ?? 'Tindakan belum memiliki hasil validasi master data.',
-      fallbackIssue: 'Tindakan perlu diverifikasi terhadap diagnosis, indikasi klinis, dan katalog master data.',
+      validationNote: validation?.note ?? 'Tindakan belum memiliki hasil validasi katalog standar.',
+      fallbackIssue: 'Tindakan perlu diverifikasi terhadap diagnosis, indikasi klinis, dan katalog standar RS.',
+      thresholds: feed.thresholds,
     })
   })
 
@@ -202,8 +221,9 @@ function enforceMasterDataValidation(
       validationStatus: validation?.status ?? 'not_found',
       masterName: validation?.masterName ?? null,
       masterTariff: validation?.masterTariff ?? null,
-      validationNote: validation?.note ?? 'Obat belum memiliki hasil validasi master data.',
-      fallbackIssue: 'Obat perlu diverifikasi terhadap diagnosis, formularium, dosis, rute, durasi, dan katalog master data.',
+      validationNote: validation?.note ?? 'Obat belum memiliki hasil validasi katalog standar.',
+      fallbackIssue: 'Obat perlu diverifikasi terhadap diagnosis, formularium, dosis, rute, durasi, dan katalog standar RS.',
+      thresholds: feed.thresholds,
     })
   })
 
@@ -220,8 +240,67 @@ function enforceMasterDataValidation(
   const deterministicIssues = buildDeterministicDataQualityIssues(feed, enforcedItems)
   const missingMasterData = buildMissingMasterData(enforcedItems)
 
+  // Determine actual vs standard expected LOS based on primary diagnosis expectedLos
+  const actualLosVal = calculateActualLos(feed.encounter.admission_date, feed.encounter.discharge_date)
+  const standardLos = feed.masterDataValidation.primaryDiagnosis.expectedLos
+
+  let losAssessmentText = output.conformanceAnalysis?.losAssessment || ''
+
+  if (standardLos != null && standardLos > 0) {
+    const diff = actualLosVal - standardLos
+    const overchargeThreshold = feed.thresholds?.losOverchargePct ?? 20
+    const underchargeThreshold = feed.thresholds?.losUnderchargePct ?? 30
+    if (diff > 0) {
+      const pct = (diff / standardLos) * 100
+      if (pct > overchargeThreshold) {
+        const msg = `OVERSTAY: Durasi rawat inap (${actualLosVal} hari) melebihi standar klinis yang ditetapkan (${standardLos} hari). Terdapat deviasi sebesar ${pct.toFixed(0)}%, melewati ambang batas toleransi (${overchargeThreshold}%).`
+        losAssessmentText = `${msg} ${losAssessmentText}`.trim()
+        deterministicIssues.push(msg)
+      } else {
+        losAssessmentText = `Durasi rawat inap (${actualLosVal} hari) melebihi standar klinis (${standardLos} hari). Deviasi sebesar ${pct.toFixed(0)}% masih berada dalam ambang batas toleransi (${overchargeThreshold}%). ${losAssessmentText}`.trim()
+      }
+    } else if (diff < 0) {
+      const pct = (Math.abs(diff) / standardLos) * 100
+      if (pct > underchargeThreshold) {
+        const msg = `UNDERSTAY: Durasi rawat inap (${actualLosVal} hari) lebih singkat dari standar klinis yang ditetapkan (${standardLos} hari). Terdapat deviasi sebesar ${pct.toFixed(0)}%, melewati ambang batas toleransi (${underchargeThreshold}%).`
+        losAssessmentText = `${msg} ${losAssessmentText}`.trim()
+        deterministicIssues.push(msg)
+      } else {
+        losAssessmentText = `Durasi rawat inap (${actualLosVal} hari) lebih singkat dari standar klinis (${standardLos} hari). Deviasi sebesar ${pct.toFixed(0)}% masih berada dalam ambang batas toleransi (${underchargeThreshold}%). ${losAssessmentText}`.trim()
+      }
+    } else {
+      losAssessmentText = `Durasi rawat inap (${actualLosVal} hari) telah sesuai dengan standar klinis yang ditetapkan (${standardLos} hari). ${losAssessmentText}`.trim()
+    }
+  } else {
+    losAssessmentText = `Referensi standar LOS tidak tersedia di katalog untuk diagnosa ${feed.diagnosis.primary_diagnosis_code}. LOS aktual: ${actualLosVal} hari. ${losAssessmentText}`.trim()
+  }
+
+  const conformanceAnalysis = output.conformanceAnalysis ? {
+    ...output.conformanceAnalysis,
+    losAssessment: losAssessmentText,
+  } : {
+    diagnosisProcedureFit: '',
+    diagnosisMedicationFit: '',
+    inpatientJustification: '',
+    losAssessment: losAssessmentText,
+    costSignal: '',
+  }
+
+  // Strip days where every clinical array is empty (AI sometimes pads to 7 regardless of actual LOS)
+  const filteredDayByDayPlan = (output.dayByDayPlan ?? []).filter((day) => {
+    const hasContent =
+      (day.assessments?.length ?? 0) > 0 ||
+      (day.interventions?.length ?? 0) > 0 ||
+      (day.medicationConsiderations?.length ?? 0) > 0 ||
+      (day.monitoring?.length ?? 0) > 0 ||
+      (day.dischargeCriteria?.length ?? 0) > 0
+    return hasContent
+  })
+
   return {
     ...output,
+    dayByDayPlan: filteredDayByDayPlan,
+    conformanceAnalysis,
     validationDashboard: {
       ...output.validationDashboard,
       overallStatus,
@@ -230,10 +309,12 @@ function enforceMasterDataValidation(
       reviewCount,
       failedCount,
       totalFlaggedCost,
+      actualLos: actualLosVal,
+      expectedLos: standardLos ?? undefined,
       quickFindings: mergeUnique([
         ...(output.validationDashboard?.quickFindings ?? []),
-        `Coverage master data lokal: ${feed.masterDataValidation.summary.coverageRate}% (${feed.masterDataValidation.summary.validCount}/${feed.masterDataValidation.summary.totalChecked} item valid).`,
-        ...(missingMasterData.length > 0 ? [`${missingMasterData.length} item belum ditemukan/aktif di master data lokal.`] : []),
+        `Coverage katalog standar lokal: ${feed.masterDataValidation.summary.coverageRate}% (${feed.masterDataValidation.summary.validCount}/${feed.masterDataValidation.summary.totalChecked} item valid).`,
+        ...(missingMasterData.length > 0 ? [`${missingMasterData.length} item belum ditemukan/aktif di katalog standar lokal.`] : []),
       ]),
       validatedItems: enforcedItems,
     },
@@ -259,6 +340,12 @@ interface EnforcedItemInput {
   masterTariff: number | null
   validationNote: string
   fallbackIssue: string
+  thresholds?: {
+    procedureOverchargePct: number
+    procedureUnderchargePct: number
+    medicationOverchargePct: number
+    medicationUnderchargePct: number
+  }
 }
 
 function buildEnforcedItem(input: EnforcedItemInput): AiValidatedClinicalItem {
@@ -266,13 +353,41 @@ function buildEnforcedItem(input: EnforcedItemInput): AiValidatedClinicalItem {
   const quantity = parseQuantity(input.inputQuantity)
   const submittedTotalCost = actualUnitCost * quantity
   const masterTariff = input.masterTariff
-  const enforcedStatus = getEnforcedStatus(input.validationStatus, input.conformance, input.aiItem?.status)
+  let enforcedStatus = getEnforcedStatus(input.validationStatus, input.conformance)
   const name = input.masterName ?? input.aiItem?.name ?? input.inputName
   const masterPriceText = masterTariff != null ? formatRupiah(masterTariff) : 'tidak tersedia'
+
+  // Determine if price deviation exceeds configured thresholds
+  let isPriceOut = false
+  if (masterTariff != null && masterTariff > 0) {
+    const diff = actualUnitCost - masterTariff
+    const overchargePct = input.type === 'procedure'
+      ? (input.thresholds?.procedureOverchargePct ?? 20)
+      : (input.thresholds?.medicationOverchargePct ?? 25)
+    const underchargePct = input.type === 'procedure'
+      ? (input.thresholds?.procedureUnderchargePct ?? 20)
+      : (input.thresholds?.medicationUnderchargePct ?? 25)
+
+    if (diff > 0) {
+      const pct = (diff / masterTariff) * 100
+      if (pct > overchargePct) isPriceOut = true
+    } else if (diff < 0) {
+      const pct = (Math.abs(diff) / masterTariff) * 100
+      if (pct > underchargePct) isPriceOut = true
+    }
+  }
+
+  // Elevate status if threshold is exceeded
+  if (enforcedStatus === 'sesuai' && isPriceOut) {
+    enforcedStatus = 'perlu_review'
+  }
+
   const priceAssessment = buildPriceAssessment({
     actualUnitCost,
     masterTariff,
+    type: input.type,
     aiPriceAssessment: input.aiItem?.priceAssessment,
+    thresholds: input.thresholds,
   })
 
   return {
@@ -281,13 +396,13 @@ function buildEnforcedItem(input: EnforcedItemInput): AiValidatedClinicalItem {
     code: input.aiItem?.code || input.code,
     name,
     status: enforcedStatus,
-    diagnosisRelation: input.aiItem?.diagnosisRelation ?? 'Relasi klinis dinilai berdasarkan diagnosis utama, conformance input, dan validasi master data lokal.',
+    diagnosisRelation: input.aiItem?.diagnosisRelation ?? 'Relasi klinis dinilai berdasarkan diagnosis utama, conformance input, dan validasi katalog standar.',
     masterDataValidation: input.validationNote,
     unitCost: masterTariff ?? actualUnitCost,
     quantity,
     totalCost: submittedTotalCost,
     priceAssessment: `${priceAssessment} Referensi master: ${masterPriceText}. Biaya input: ${formatRupiah(actualUnitCost)} x ${quantity}.`,
-    issue: buildIssue(input, enforcedStatus),
+    issue: buildIssue(input, enforcedStatus, isPriceOut),
     recommendedAction: buildRecommendedAction(input.validationStatus, enforcedStatus, input.aiItem?.recommendedAction),
   }
 }
@@ -295,21 +410,20 @@ function buildEnforcedItem(input: EnforcedItemInput): AiValidatedClinicalItem {
 function getEnforcedStatus(
   validationStatus: string,
   conformance: string,
-  aiStatus: AiValidationStatus = 'sesuai',
 ): AiValidationStatus {
   if (validationStatus === 'not_active') return 'tidak_sesuai'
   if (validationStatus === 'not_found') return 'perlu_review'
   if (conformance.toLowerCase() === 'tidak') return 'tidak_sesuai'
-  if (aiStatus === 'tidak_sesuai' || aiStatus === 'perlu_review' || aiStatus === 'data_kurang') return aiStatus
   return 'sesuai'
 }
 
-function buildIssue(input: EnforcedItemInput, status: AiValidationStatus): string {
-  if (input.validationStatus === 'not_found') return `${input.inputName} tidak ditemukan di master data lokal. ${input.fallbackIssue}`
-  if (input.validationStatus === 'not_active') return `${input.masterName ?? input.inputName} terdaftar tetapi tidak aktif di master data lokal.`
+function buildIssue(input: EnforcedItemInput, status: AiValidationStatus, isPriceOut?: boolean): string {
+  if (input.validationStatus === 'not_found') return `${input.inputName} tidak ditemukan di katalog standar lokal. ${input.fallbackIssue}`
+  if (input.validationStatus === 'not_active') return `${input.masterName ?? input.inputName} terdaftar tetapi tidak aktif di katalog standar lokal.`
   if (input.conformance.toLowerCase() === 'tidak') return input.aiItem?.issue || `${input.inputName} ditandai tidak sesuai pada input, sehingga perlu justifikasi klinis/administratif.`
+  if (isPriceOut) return `Harga menyimpang di luar batas threshold toleransi. ${input.fallbackIssue}`
   if (status !== 'sesuai') return input.aiItem?.issue || input.fallbackIssue
-  return input.aiItem?.issue || 'Tidak ada isu mayor berdasarkan master data lokal dan conformance input.'
+  return input.aiItem?.issue || 'Tidak ada isu mayor berdasarkan katalog standar dan conformance input.'
 }
 
 function buildRecommendedAction(
@@ -317,8 +431,8 @@ function buildRecommendedAction(
   status: AiValidationStatus,
   aiRecommendedAction?: string,
 ): string {
-  if (validationStatus === 'not_found') return 'Verifikasi manual, lengkapi master data bila item memang digunakan rutin, dan pastikan indikasi klinis terdokumentasi.'
-  if (validationStatus === 'not_active') return 'Gunakan alternatif aktif di master data atau aktifkan kembali item melalui proses tata kelola master data.'
+  if (validationStatus === 'not_found') return 'Verifikasi manual, lengkapi katalog bila item memang digunakan rutin, dan pastikan indikasi klinis terdokumentasi.'
+  if (validationStatus === 'not_active') return 'Gunakan alternatif aktif di katalog standar atau aktifkan kembali item melalui proses tata kelola layanan.'
   if (status === 'tidak_sesuai') return aiRecommendedAction || 'Minta justifikasi DPJP/case manager atau koreksi item agar sesuai pathway.'
   if (status === 'perlu_review' || status === 'data_kurang') return aiRecommendedAction || 'Lengkapi data klinis, dosis/frekuensi, indikasi, dan bukti penunjang sebelum finalisasi klaim/pathway.'
   return aiRecommendedAction || 'Pertahankan rencana dan monitoring sesuai clinical pathway.'
@@ -327,16 +441,42 @@ function buildRecommendedAction(
 function buildPriceAssessment(input: {
   actualUnitCost: number
   masterTariff: number | null
+  type: 'procedure' | 'medication'
   aiPriceAssessment?: string
+  thresholds?: {
+    procedureOverchargePct: number
+    procedureUnderchargePct: number
+    medicationOverchargePct: number
+    medicationUnderchargePct: number
+  }
 }): string {
   if (input.masterTariff == null || input.masterTariff <= 0) {
     return input.aiPriceAssessment || 'Tarif master belum tersedia sehingga kewajaran harga perlu review manual.'
   }
 
   const diff = input.actualUnitCost - input.masterTariff
-  if (diff > 0) return `Harga input lebih tinggi ${formatRupiah(diff)} dari tarif master.`
-  if (diff < 0) return `Harga input lebih rendah ${formatRupiah(Math.abs(diff))} dari tarif master.`
-  return 'Harga input sesuai tarif master.'
+  const overchargePct = input.type === 'procedure'
+    ? (input.thresholds?.procedureOverchargePct ?? 20)
+    : (input.thresholds?.medicationOverchargePct ?? 25)
+  const underchargePct = input.type === 'procedure'
+    ? (input.thresholds?.procedureUnderchargePct ?? 20)
+    : (input.thresholds?.medicationUnderchargePct ?? 25)
+
+  if (diff > 0) {
+    const pct = (diff / input.masterTariff) * 100
+    if (pct > overchargePct) {
+      return `OVERCHARGE: Tarif yang diinputkan melebihi batas standar wajar. Terdapat kelebihan biaya sebesar ${formatRupiah(diff)} (${pct.toFixed(0)}%), yang melewati ambang toleransi maksimal (${overchargePct}%).`
+    }
+    return `Tarif yang diinputkan lebih tinggi ${formatRupiah(diff)} (${pct.toFixed(0)}%) dari standar katalog. Nilai ini masih dalam ambang batas toleransi yang diizinkan (${overchargePct}%).`
+  }
+  if (diff < 0) {
+    const pct = (Math.abs(diff) / input.masterTariff) * 100
+    if (pct > underchargePct) {
+      return `UNDERCHARGE: Tarif yang diinputkan berada di bawah standar wajar. Terdapat selisih biaya sebesar ${formatRupiah(Math.abs(diff))} (${pct.toFixed(0)}%), yang melewati ambang toleransi minimal (${underchargePct}%).`
+    }
+    return `Tarif yang diinputkan lebih rendah ${formatRupiah(Math.abs(diff))} (${pct.toFixed(0)}%) dari standar katalog. Nilai ini masih dalam ambang batas toleransi yang diizinkan (${underchargePct}%).`
+  }
+  return 'Tarif yang diinputkan telah sesuai dengan referensi standar katalog rumah sakit.'
 }
 
 function buildDeterministicDataQualityIssues(
@@ -414,7 +554,7 @@ function cleanJsonCandidate(rawText: string): string {
 }
 
 async function repairBrainJson(rawJson: string, parseError: unknown): Promise<string> {
-  return await createSumoPodChatCompletion({
+  const repairInput = {
     temperature: 0,
     // Must match or exceed the original output token size so repair doesn't truncate.
     maxTokens: 8000,
@@ -424,13 +564,16 @@ async function repairBrainJson(rawJson: string, parseError: unknown): Promise<st
     budgetTokens: 2000,
     messages: [
       {
-        role: 'system',
+        role: 'system' as const,
         content: 'You are a JSON repair engine. Return only valid JSON, no markdown, no comments. Do not alter clinical meaning. Fix unclosed strings, escape newlines/quotes, commas, and brackets so JSON.parse succeeds.',
       },
       {
-        role: 'user',
+        role: 'user' as const,
         content: `The following JSON failed to parse with error: ${parseError instanceof Error ? parseError.message : 'unknown error'}\n\nRepair into valid complete JSON:\n${rawJson}`,
       },
     ],
-  })
+  }
+  const result = await callAi(repairInput)
+  return result.content
+
 }

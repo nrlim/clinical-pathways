@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) })
   } catch (error) {
-    console.error('Master Data API Error:', error)
+    console.error('[Master Data API] error:', error instanceof Error ? error.message : 'unknown error')
     return NextResponse.json({ message: 'Gagal mengambil data master.' }, { status: 500 })
   }
 }

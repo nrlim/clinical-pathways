@@ -45,10 +45,11 @@ model MasterDiagnosis {
   name        String
   description String?
   tags        Json?    // e.g. ["infeksi", "paru"]
+  expectedLos Decimal? @db.Decimal(5, 1) // Expected Length of Stay (hari)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   @@map("cp_master_diagnosis")
 }
 
@@ -166,4 +167,19 @@ model ApiKey {
 
   @@index([keyId])
   @@map("ecred_api_keys")
+}
+
+// ─── System Settings (AI Threshold Config) ────────────────────────────────────
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique   // e.g. "threshold_procedure_overcharge_pct"
+  value     String             // Stored as numeric string, e.g. "20"
+  label     String             // Human-readable label
+  category  String             // "threshold_procedure" | "threshold_medication" | "threshold_los"
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([category])
+  @@map("cp_system_settings")
 }

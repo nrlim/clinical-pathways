@@ -10,7 +10,7 @@ export interface ClinicalPathwayWorkflowResult {
 }
 
 /**
- * Clinical Pathway Workflow Orchestrator
+ * SnapPath Workflow Orchestrator
  *
  * Runs 4 steps in sequence with durability and automatic retry:
  *   1. buildFeedStep     — Build structured AI feed from form + master data

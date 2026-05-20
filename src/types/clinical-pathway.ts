@@ -1,5 +1,5 @@
 // ============================================================
-// CLINICAL PATHWAY — DOMAIN TYPES
+// SNAPPATH — DOMAIN TYPES
 // ============================================================
 
 export type Gender = 'male' | 'female'
@@ -172,10 +172,10 @@ export interface AiSummaryFeed {
    */
   masterDataValidation: {
     primaryDiagnosis: {
-      code: string; status: string; masterName: string | null; note: string
+      code: string; status: string; masterName: string | null; expectedLos: number | null; note: string
     }
     secondaryDiagnoses: Array<{
-      code: string; status: string; masterName: string | null; note: string
+      code: string; status: string; masterName: string | null; expectedLos: number | null; note: string
     }>
     procedures: Array<{
       id: string; code: string; status: string; masterName: string | null;
@@ -190,6 +190,14 @@ export interface AiSummaryFeed {
       totalChecked: number; validCount: number; notFoundCount: number;
       notActiveCount: number; coverageRate: number
     }
+  }
+  thresholds?: {
+    procedureOverchargePct: number
+    procedureUnderchargePct: number
+    medicationOverchargePct: number
+    medicationUnderchargePct: number
+    losOverchargePct: number
+    losUnderchargePct: number
   }
 }
 

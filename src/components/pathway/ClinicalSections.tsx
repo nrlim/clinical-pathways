@@ -393,7 +393,7 @@ export function InpatientJustificationForm({
           <select className="form-select" value={data.los_conformance}
             onChange={e => onChange('los_conformance', e.target.value)}>
             <option value="">Pilih...</option>
-            <option value="sesuai">Sesuai Clinical Pathway</option>
+            <option value="sesuai">Sesuai SnapPath</option>
             <option value="tidak">Melebihi / Di bawah standar</option>
             <option value="review">Perlu Review PIC</option>
           </select>

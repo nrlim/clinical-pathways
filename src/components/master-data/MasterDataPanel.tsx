@@ -102,7 +102,7 @@ export function MasterDataPanel() {
           <div>
             <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '4px' }}>Manajemen Referensi Klinis</div>
             <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              Master Data <span style={{ background: 'linear-gradient(90deg, var(--color-primary-600), var(--color-info-500))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Klinis</span>
+              Katalog Standar <span style={{ background: 'linear-gradient(90deg, var(--color-primary-600), var(--color-info-500))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Klinis</span>
             </h1>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
               Data referensi ICD-10, INA-CBG, FORNAS, dan Practitioner sebagai dasar validasi AI.
@@ -121,7 +121,7 @@ export function MasterDataPanel() {
           <Database size={18} />
         </div>
         <div>
-          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>Source of Truth — Master Data Lokal</div>
+          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>Source of Truth — Katalog Standar Lokal</div>
           <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             Seluruh data diambil dari tabel{' '}
             <code style={{ fontSize: '0.78rem', background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderRadius: '4px', padding: '1px 6px', fontFamily: 'monospace', color: 'var(--color-primary-500)' }}>MasterDiagnosis</code>,{' '}

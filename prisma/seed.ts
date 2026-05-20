@@ -10,41 +10,41 @@ const prisma = new PrismaClient()
 
 // ─── Diagnosa ───────────────────────────────────────────────────────────────
 const diagnosesRaw = [
-  { code: 'A09.9', name: 'Gastroenteritis and colitis of unspecified origin', description: 'Diare akut/dehidrasi; pathway rehidrasi, elektrolit, evaluasi infeksi.', tags: ['infeksi', 'gastrointestinal', 'diare', 'dehidrasi', 'igd'] },
-  { code: 'A15.0', name: 'Tuberculosis of lung, confirmed by sputum microscopy', description: 'TB paru terkonfirmasi bakteriologis; pathway OAT, isolasi, pemantauan efek samping.', tags: ['infeksi', 'paru', 'tb', 'oat', 'menular'] },
-  { code: 'A41.9', name: 'Sepsis, unspecified organism', description: 'Sepsis dengan fokus belum pasti; pathway bundle sepsis, kultur, antibiotik empiris.', tags: ['infeksi', 'sepsis', 'igd', 'kritis', 'antibiotik'] },
-  { code: 'A91', name: 'Dengue haemorrhagic fever', description: 'DBD klasik; pathway monitoring hematokrit/trombosit, cairan, tanda syok.', tags: ['infeksi', 'dengue', 'anak', 'dewasa', 'trombositopenia'] },
-  { code: 'A97.0', name: 'Dengue without warning signs', description: 'Dengue tanpa tanda bahaya; pathway rawat jalan/observasi dan edukasi warning signs.', tags: ['infeksi', 'dengue', 'rawat-jalan'] },
-  { code: 'A97.1', name: 'Dengue with warning signs', description: 'Dengue dengan tanda bahaya; pathway rawat inap dan pemantauan cairan ketat.', tags: ['infeksi', 'dengue', 'rawat-inap', 'warning-signs'] },
-  { code: 'A97.2', name: 'Severe dengue', description: 'Dengue berat/DSS; pathway resusitasi cairan, monitoring intensif.', tags: ['infeksi', 'dengue', 'syok', 'icu'] },
-  { code: 'B20', name: 'HIV disease resulting in infectious and parasitic diseases', description: 'HIV dengan infeksi oportunistik; pathway ART, profilaksis, skrining TB.', tags: ['infeksi', 'hiv', 'imunologi'] },
-  { code: 'E10.1', name: 'Type 1 diabetes mellitus with ketoacidosis', description: 'DKA; pathway cairan, insulin drip, koreksi elektrolit, monitoring keton.', tags: ['endokrin', 'diabetes', 'dka', 'igd'] },
-  { code: 'E11.9', name: 'Type 2 diabetes mellitus without complications', description: 'DM tipe 2 tanpa komplikasi akut; pathway edukasi, OAD/insulin, kontrol metabolik.', tags: ['endokrin', 'diabetes', 'kronis'] },
-  { code: 'E11.65', name: 'Type 2 diabetes mellitus with hyperglycaemia', description: 'Hiperglikemia pada DM2; pathway koreksi gula darah dan evaluasi komorbid.', tags: ['endokrin', 'diabetes', 'hiperglikemia'] },
-  { code: 'E86', name: 'Volume depletion', description: 'Dehidrasi ringan-sedang-berat; pathway rehidrasi oral/IV dan evaluasi penyebab.', tags: ['cairan', 'dehidrasi', 'igd'] },
-  { code: 'G40.9', name: 'Epilepsy, unspecified', description: 'Kejang/epilepsi; pathway kontrol kejang, antikonvulsan, evaluasi neurologis.', tags: ['saraf', 'kejang', 'neurologi'] },
-  { code: 'I10', name: 'Essential (primary) hypertension', description: 'Hipertensi esensial; pathway stratifikasi risiko, terapi antihipertensi, edukasi.', tags: ['kardiovaskular', 'hipertensi', 'kronis'] },
-  { code: 'I20.0', name: 'Unstable angina', description: 'Angina tidak stabil; pathway ACS, EKG serial, troponin, antiplatelet.', tags: ['jantung', 'acs', 'igd'] },
-  { code: 'I21.9', name: 'Acute myocardial infarction, unspecified', description: 'Infark miokard akut; pathway reperfusi, antiplatelet, antikoagulan, ICU.', tags: ['jantung', 'ami', 'stemi', 'nstemi', 'kritis'] },
-  { code: 'I50.9', name: 'Heart failure, unspecified', description: 'Gagal jantung akut/kronik; pathway diuretik, oksigen, evaluasi overload.', tags: ['jantung', 'gagal-jantung', 'rawat-inap'] },
-  { code: 'I63.9', name: 'Cerebral infarction, unspecified', description: 'Stroke iskemik; pathway CT kepala, reperfusi bila eligible, rehabilitasi dini.', tags: ['saraf', 'stroke', 'neurologi', 'igd'] },
-  { code: 'J06.9', name: 'Acute upper respiratory infection, unspecified', description: 'ISPA atas; pathway simtomatik, edukasi, hindari antibiotik tidak perlu.', tags: ['infeksi', 'respirasi', 'rawat-jalan'] },
-  { code: 'J18.9', name: 'Pneumonia, unspecified organism', description: 'Community/hospital acquired pneumonia; pathway antibiotik empiris, oksigen, foto toraks.', tags: ['infeksi', 'paru', 'pneumonia', 'rawat-inap'] },
-  { code: 'J44.1', name: 'Chronic obstructive pulmonary disease with acute exacerbation', description: 'Eksaserbasi PPOK; pathway bronkodilator, steroid, antibiotik selektif, oksigen target.', tags: ['paru', 'ppok', 'eksaserbasi'] },
-  { code: 'J45.9', name: 'Asthma, unspecified', description: 'Asma akut/kronik; pathway bronkodilator inhalasi, steroid, edukasi inhaler.', tags: ['paru', 'asma', 'igd', 'nebulisasi'] },
-  { code: 'K25.0', name: 'Gastric ulcer, acute with haemorrhage', description: 'Ulkus gaster dengan perdarahan; pathway PPI, endoskopi, transfusi selektif.', tags: ['gastrointestinal', 'perdarahan', 'endoskopi'] },
-  { code: 'K29.7', name: 'Gastritis, unspecified', description: 'Gastritis/dispepsia; pathway PPI, eradikasi H. pylori bila indikasi.', tags: ['gastrointestinal', 'dispepsia', 'rawat-jalan'] },
-  { code: 'K35.8', name: 'Acute appendicitis, other and unspecified', description: 'Apendisitis akut; pathway evaluasi bedah, antibiotik profilaksis, appendectomy.', tags: ['bedah', 'abdomen', 'igd', 'appendectomy'] },
-  { code: 'K80.2', name: 'Calculus of gallbladder without cholecystitis', description: 'Kolelitiasis simptomatik; pathway analgesia, USG, rencana kolesistektomi.', tags: ['bedah', 'hepatobilier', 'usg'] },
-  { code: 'N17.9', name: 'Acute kidney failure, unspecified', description: 'AKI; pathway koreksi cairan/elektrolit, hindari nefrotoksik, indikasi dialisis.', tags: ['ginjal', 'aki', 'elektrolit'] },
-  { code: 'N39.0', name: 'Urinary tract infection, site not specified', description: 'ISK bawah/atas; pathway urinalisis, antibiotik sesuai risiko, kultur bila indikasi.', tags: ['infeksi', 'urologi', 'antibiotik'] },
-  { code: 'O80.0', name: 'Spontaneous vertex delivery', description: 'Persalinan normal; pathway partograf, manajemen aktif kala III, observasi nifas.', tags: ['obgyn', 'persalinan', 'maternal'] },
-  { code: 'O82.9', name: 'Delivery by caesarean section, unspecified', description: 'Sectio caesarea; pathway praoperatif, antibiotik profilaksis, ERACS selektif.', tags: ['obgyn', 'bedah', 'sectio'] },
-  { code: 'P07.3', name: 'Other preterm infants', description: 'Bayi prematur; pathway termoregulasi, nutrisi, skrining komplikasi neonatal.', tags: ['neonatus', 'anak', 'nicu'] },
-  { code: 'R10.4', name: 'Other and unspecified abdominal pain', description: 'Nyeri abdomen nonspesifik; pathway triase red flag, lab/imaging sesuai indikasi.', tags: ['gejala', 'abdomen', 'igd'] },
-  { code: 'S06.0', name: 'Concussion', description: 'Cedera kepala ringan; pathway observasi neurologis, CT bila red flag.', tags: ['trauma', 'saraf', 'igd'] },
-  { code: 'S72.0', name: 'Fracture of neck of femur', description: 'Fraktur collum femur; pathway analgesia, imobilisasi, operasi ortopedi.', tags: ['ortopedi', 'fraktur', 'bedah'] },
-  { code: 'U07.1', name: 'COVID-19, virus identified', description: 'COVID-19 terkonfirmasi; pathway isolasi, stratifikasi derajat, antivirus/steroid sesuai indikasi.', tags: ['infeksi', 'covid', 'respirasi', 'isolasi'] },
+  { code: 'A09.9', name: 'Gastroenteritis and colitis of unspecified origin', expectedLos: 3, description: 'Diare akut/dehidrasi; pathway rehidrasi, elektrolit, evaluasi infeksi.', tags: ['infeksi', 'gastrointestinal', 'diare', 'dehidrasi', 'igd'] },
+  { code: 'A15.0', name: 'Tuberculosis of lung, confirmed by sputum microscopy', expectedLos: 14, description: 'TB paru terkonfirmasi bakteriologis; pathway OAT, isolasi, pemantauan efek samping.', tags: ['infeksi', 'paru', 'tb', 'oat', 'menular'] },
+  { code: 'A41.9', name: 'Sepsis, unspecified organism', expectedLos: 7, description: 'Sepsis dengan fokus belum pasti; pathway bundle sepsis, kultur, antibiotik empiris.', tags: ['infeksi', 'sepsis', 'igd', 'kritis', 'antibiotik'] },
+  { code: 'A91', name: 'Dengue haemorrhagic fever', expectedLos: 5, description: 'DBD klasik; pathway monitoring hematokrit/trombosit, cairan, tanda syok.', tags: ['infeksi', 'dengue', 'anak', 'dewasa', 'trombositopenia'] },
+  { code: 'A97.0', name: 'Dengue without warning signs', expectedLos: 3, description: 'Dengue tanpa tanda bahaya; pathway rawat jalan/observasi dan edukasi warning signs.', tags: ['infeksi', 'dengue', 'rawat-jalan'] },
+  { code: 'A97.1', name: 'Dengue with warning signs', expectedLos: 5, description: 'Dengue dengan tanda bahaya; pathway rawat inap dan pemantauan cairan ketat.', tags: ['infeksi', 'dengue', 'rawat-inap', 'warning-signs'] },
+  { code: 'A97.2', name: 'Severe dengue', expectedLos: 7, description: 'Dengue berat/DSS; pathway resusitasi cairan, monitoring intensif.', tags: ['infeksi', 'dengue', 'syok', 'icu'] },
+  { code: 'B20', name: 'HIV disease resulting in infectious and parasitic diseases', expectedLos: 10, description: 'HIV dengan infeksi oportunistik; pathway ART, profilaksis, skrining TB.', tags: ['infeksi', 'hiv', 'imunologi'] },
+  { code: 'E10.1', name: 'Type 1 diabetes mellitus with ketoacidosis', expectedLos: 4, description: 'DKA; pathway cairan, insulin drip, koreksi elektrolit, monitoring keton.', tags: ['endokrin', 'diabetes', 'dka', 'igd'] },
+  { code: 'E11.9', name: 'Type 2 diabetes mellitus without complications', expectedLos: 3, description: 'DM tipe 2 tanpa komplikasi akut; pathway edukasi, OAD/insulin, kontrol metabolik.', tags: ['endokrin', 'diabetes', 'kronis'] },
+  { code: 'E11.65', name: 'Type 2 diabetes mellitus with hyperglycaemia', expectedLos: 3, description: 'Hiperglikemia pada DM2; pathway koreksi gula darah dan evaluasi komorbid.', tags: ['endokrin', 'diabetes', 'hiperglikemia'] },
+  { code: 'E86', name: 'Volume depletion', expectedLos: 2, description: 'Dehidrasi ringan-sedang-berat; pathway rehidrasi oral/IV dan evaluasi penyebab.', tags: ['cairan', 'dehidrasi', 'igd'] },
+  { code: 'G40.9', name: 'Epilepsy, unspecified', expectedLos: 3, description: 'Kejang/epilepsi; pathway kontrol kejang, antikonvulsan, evaluasi neurologis.', tags: ['saraf', 'kejang', 'neurologi'] },
+  { code: 'I10', name: 'Essential (primary) hypertension', expectedLos: 2, description: 'Hipertensi esensial; pathway stratifikasi risiko, terapi antihipertensi, edukasi.', tags: ['kardiovaskular', 'hipertensi', 'kronis'] },
+  { code: 'I20.0', name: 'Unstable angina', expectedLos: 3, description: 'Angina tidak stabil; pathway ACS, EKG serial, troponin, antiplatelet.', tags: ['jantung', 'acs', 'igd'] },
+  { code: 'I21.9', name: 'Acute myocardial infarction, unspecified', expectedLos: 5, description: 'Infark miokard akut; pathway reperfusi, antiplatelet, antikoagulan, ICU.', tags: ['jantung', 'ami', 'stemi', 'nstemi', 'kritis'] },
+  { code: 'I50.9', name: 'Heart failure, unspecified', expectedLos: 5, description: 'Gagal jantung akut/kronik; pathway diuretik, oksigen, evaluasi overload.', tags: ['jantung', 'gagal-jantung', 'rawat-inap'] },
+  { code: 'I63.9', name: 'Cerebral infarction, unspecified', expectedLos: 7, description: 'Stroke iskemik; pathway CT kepala, reperfusi bila eligible, rehabilitasi dini.', tags: ['saraf', 'stroke', 'neurologi', 'igd'] },
+  { code: 'J06.9', name: 'Acute upper respiratory infection, unspecified', expectedLos: 2, description: 'ISPA atas; pathway simtomatik, edukasi, hindari antibiotik tidak perlu.', tags: ['infeksi', 'respirasi', 'rawat-jalan'] },
+  { code: 'J18.9', name: 'Pneumonia, unspecified organism', expectedLos: 5, description: 'Community/hospital acquired pneumonia; pathway antibiotik empiris, oksigen, foto toraks.', tags: ['infeksi', 'paru', 'pneumonia', 'rawat-inap'] },
+  { code: 'J44.1', name: 'Chronic obstructive pulmonary disease with acute exacerbation', expectedLos: 5, description: 'Eksaserbasi PPOK; pathway bronkodilator, steroid, antibiotik selektif, oksigen target.', tags: ['paru', 'ppok', 'eksaserbasi'] },
+  { code: 'J45.9', name: 'Asthma, unspecified', expectedLos: 3, description: 'Asma akut/kronik; pathway bronkodilator inhalasi, steroid, edukasi inhaler.', tags: ['paru', 'asma', 'igd', 'nebulisasi'] },
+  { code: 'K25.0', name: 'Gastric ulcer, acute with haemorrhage', expectedLos: 4, description: 'Ulkus gaster dengan perdarahan; pathway PPI, endoskopi, transfusi selektif.', tags: ['gastrointestinal', 'perdarahan', 'endoskopi'] },
+  { code: 'K29.7', name: 'Gastritis, unspecified', expectedLos: 2, description: 'Gastritis/dispepsia; pathway PPI, eradikasi H. pylori bila indikasi.', tags: ['gastrointestinal', 'dispepsia', 'rawat-jalan'] },
+  { code: 'K35.8', name: 'Acute appendicitis, other and unspecified', expectedLos: 3, description: 'Apendisitis akut; pathway evaluasi bedah, antibiotik profilaksis, appendectomy.', tags: ['bedah', 'abdomen', 'igd', 'appendectomy'] },
+  { code: 'K80.2', name: 'Calculus of gallbladder without cholecystitis', expectedLos: 3, description: 'Kolelitiasis simptomatik; pathway analgesia, USG, rencana kolesistektomi.', tags: ['bedah', 'hepatobilier', 'usg'] },
+  { code: 'N17.9', name: 'Acute kidney failure, unspecified', expectedLos: 6, description: 'AKI; pathway koreksi cairan/elektrolit, hindari nefrotoksik, indikasi dialisis.', tags: ['ginjal', 'aki', 'elektrolit'] },
+  { code: 'N39.0', name: 'Urinary tract infection, site not specified', expectedLos: 3, description: 'ISK bawah/atas; pathway urinalisis, antibiotik sesuai risiko, kultur bila indikasi.', tags: ['infeksi', 'urologi', 'antibiotik'] },
+  { code: 'O80.0', name: 'Spontaneous vertex delivery', expectedLos: 2, description: 'Persalinan normal; pathway partograf, manajemen aktif kala III, observasi nifas.', tags: ['obgyn', 'persalinan', 'maternal'] },
+  { code: 'O82.9', name: 'Delivery by caesarean section, unspecified', expectedLos: 3, description: 'Sectio caesarea; pathway praoperatif, antibiotik profilaksis, ERACS selektif.', tags: ['obgyn', 'bedah', 'sectio'] },
+  { code: 'P07.3', name: 'Other preterm infants', expectedLos: 14, description: 'Bayi prematur; pathway termoregulasi, nutrisi, skrining komplikasi neonatal.', tags: ['neonatus', 'anak', 'nicu'] },
+  { code: 'R10.4', name: 'Other and unspecified abdominal pain', expectedLos: 1, description: 'Nyeri abdomen nonspesifik; pathway triase red flag, lab/imaging sesuai indikasi.', tags: ['gejala', 'abdomen', 'igd'] },
+  { code: 'S06.0', name: 'Concussion', expectedLos: 1, description: 'Cedera kepala ringan; pathway observasi neurologis, CT bila red flag.', tags: ['trauma', 'saraf', 'igd'] },
+  { code: 'S72.0', name: 'Fracture of neck of femur', expectedLos: 7, description: 'Fraktur collum femur; pathway analgesia, imobilisasi, operasi ortopedi.', tags: ['ortopedi', 'fraktur', 'bedah'] },
+  { code: 'U07.1', name: 'COVID-19, virus identified', expectedLos: 7, description: 'COVID-19 terkonfirmasi; pathway isolasi, stratifikasi derajat, antivirus/steroid sesuai indikasi.', tags: ['infeksi', 'covid', 'respirasi', 'isolasi'] },
 ]
 
 const commonDiagnosisReferences = `
@@ -121,7 +121,9 @@ const supplementalDiagnoses = commonDiagnosisReferences.map((line) => {
   return {
     code,
     name,
-    description: `Referensi validasi clinical pathway untuk ${name}: diagnosis, pemeriksaan penunjang, terapi, indikasi rawat, LOS, red flags, dan kriteria rujukan.`,
+    // Default LOS for supplemental diagnoses — AI will use form input as fallback if not set
+    expectedLos: new Prisma.Decimal(3),
+    description: `Referensi validasi SnapPath untuk ${name}: diagnosis, pemeriksaan penunjang, terapi, indikasi rawat, LOS, red flags, dan kriteria rujukan.`,
     tags,
   }
 })
@@ -398,7 +400,7 @@ const practitionersRaw = [
   { nik: '3173012403840024', name: 'dr. Nadia Febriani, Sp.M', specialization: 'Oftalmologi', tags: ['mata', 'diabetes', 'skrining'] },
   { nik: '3173012501710025', name: 'dr. Galih Prakoso, M.Ked.Klin', specialization: 'Dokter Umum Rawat Jalan', tags: ['rawat-jalan', 'triase', 'kronis'] },
   { nik: '3173012604940026', name: 'dr. Amanda Putri', specialization: 'Dokter Umum IGD', tags: ['igd', 'triase', 'stabilisasi'] },
-  { nik: '3173012702890027', name: 'dr. Fajar Nugraha', specialization: 'Dokter Umum Bangsal', tags: ['rawat-inap', 'monitoring', 'clinical-pathway'] },
+  { nik: '3173012702890027', name: 'dr. Fajar Nugraha', specialization: 'Dokter Umum Bangsal', tags: ['rawat-inap', 'monitoring', 'SnapPath'] },
   { nik: '3173012801830028', name: 'dr. Salsabila Anindya, Sp.PD', specialization: 'Penyakit Dalam', tags: ['rawat-inap', 'pneumonia', 'diabetes', 'hipertensi'] },
   { nik: '3173012904760029', name: 'dr. Kevin Hartanto, Sp.BTKV', specialization: 'Bedah Toraks Kardiak Vaskular', tags: ['jantung', 'toraks', 'bedah'] },
   { nik: '3173013005900030', name: 'dr. Rini Puspitasari, Sp.Farm.Klin', specialization: 'Farmakologi Klinik', tags: ['farmasi-klinik', 'interaksi-obat', 'validasi-obat'] },
@@ -409,7 +411,7 @@ const practitionerNames = [
 ]
 
 const practitionerProfiles: Array<[string, string, string[]]> = [
-  ['Sp.PD', 'Penyakit Dalam', ['rawat-inap', 'kronis']], ['Sp.PD-KKV', 'Penyakit Dalam - Kardiovaskular', ['hipertensi', 'gagal-jantung']], ['Sp.PD-KGEH', 'Penyakit Dalam - Gastroenterohepatologi', ['hepatitis', 'sirosis']], ['Sp.PD-KHOM', 'Penyakit Dalam - Hematologi Onkologi Medik', ['onkologi', 'anemia']], ['Sp.A', 'Kesehatan Anak', ['anak', 'dengue']], ['Sp.A(K)', 'Anak - Neonatologi/Infeksi', ['neonatus', 'infeksi']], ['Sp.OG', 'Obstetri dan Ginekologi', ['persalinan', 'anc']], ['Sp.B', 'Bedah Umum', ['appendicitis', 'luka']], ['Sp.B-KBD', 'Bedah Digestif', ['abdomen', 'hepatobilier']], ['Sp.U', 'Urologi', ['isk', 'bph']], ['Sp.OT', 'Ortopedi dan Traumatologi', ['fraktur', 'trauma']], ['Sp.N', 'Neurologi', ['stroke', 'kejang']], ['Sp.KJ', 'Psikiatri', ['depresi', 'cemas']], ['Sp.P', 'Pulmonologi', ['tb', 'asma']], ['Sp.JP', 'Jantung dan Pembuluh Darah', ['acs', 'aritmia']], ['Sp.Rad', 'Radiologi', ['ct-scan', 'usg']], ['Sp.PK', 'Patologi Klinik', ['laboratorium', 'hematologi']], ['Sp.MK', 'Mikrobiologi Klinik', ['kultur', 'antibiotik']], ['Sp.An-KIC', 'Anestesiologi dan Terapi Intensif', ['icu', 'ventilator']], ['Sp.EM', 'Emergency Medicine', ['igd', 'resusitasi']], ['Sp.KFR', 'Rehabilitasi Medik', ['stroke', 'low-back-pain']], ['Sp.GK', 'Gizi Klinik', ['obesitas', 'diabetes']], ['Sp.M', 'Oftalmologi', ['mata', 'diabetes']], ['Sp.THT-KL', 'THT-KL', ['otitis', 'tonsilitis']], ['Sp.DV', 'Dermatologi Venereologi', ['selulitis', 'urtikaria']], ['Sp.Onk.Rad', 'Onkologi Radiasi', ['radioterapi', 'paliatif']], ['Sp.Farm.Klin', 'Farmakologi Klinik', ['validasi-obat', 'interaksi']], ['Dokter Umum', 'Dokter Umum Clinical Pathway', ['triase', 'monitoring']]
+  ['Sp.PD', 'Penyakit Dalam', ['rawat-inap', 'kronis']], ['Sp.PD-KKV', 'Penyakit Dalam - Kardiovaskular', ['hipertensi', 'gagal-jantung']], ['Sp.PD-KGEH', 'Penyakit Dalam - Gastroenterohepatologi', ['hepatitis', 'sirosis']], ['Sp.PD-KHOM', 'Penyakit Dalam - Hematologi Onkologi Medik', ['onkologi', 'anemia']], ['Sp.A', 'Kesehatan Anak', ['anak', 'dengue']], ['Sp.A(K)', 'Anak - Neonatologi/Infeksi', ['neonatus', 'infeksi']], ['Sp.OG', 'Obstetri dan Ginekologi', ['persalinan', 'anc']], ['Sp.B', 'Bedah Umum', ['appendicitis', 'luka']], ['Sp.B-KBD', 'Bedah Digestif', ['abdomen', 'hepatobilier']], ['Sp.U', 'Urologi', ['isk', 'bph']], ['Sp.OT', 'Ortopedi dan Traumatologi', ['fraktur', 'trauma']], ['Sp.N', 'Neurologi', ['stroke', 'kejang']], ['Sp.KJ', 'Psikiatri', ['depresi', 'cemas']], ['Sp.P', 'Pulmonologi', ['tb', 'asma']], ['Sp.JP', 'Jantung dan Pembuluh Darah', ['acs', 'aritmia']], ['Sp.Rad', 'Radiologi', ['ct-scan', 'usg']], ['Sp.PK', 'Patologi Klinik', ['laboratorium', 'hematologi']], ['Sp.MK', 'Mikrobiologi Klinik', ['kultur', 'antibiotik']], ['Sp.An-KIC', 'Anestesiologi dan Terapi Intensif', ['icu', 'ventilator']], ['Sp.EM', 'Emergency Medicine', ['igd', 'resusitasi']], ['Sp.KFR', 'Rehabilitasi Medik', ['stroke', 'low-back-pain']], ['Sp.GK', 'Gizi Klinik', ['obesitas', 'diabetes']], ['Sp.M', 'Oftalmologi', ['mata', 'diabetes']], ['Sp.THT-KL', 'THT-KL', ['otitis', 'tonsilitis']], ['Sp.DV', 'Dermatologi Venereologi', ['selulitis', 'urtikaria']], ['Sp.Onk.Rad', 'Onkologi Radiasi', ['radioterapi', 'paliatif']], ['Sp.Farm.Klin', 'Farmakologi Klinik', ['validasi-obat', 'interaksi']], ['Dokter Umum', 'Dokter Umum SnapPath', ['triase', 'monitoring']]
 ]
 
 const supplementalPractitioners = practitionerNames.map((baseName, index) => {
@@ -423,6 +425,11 @@ const supplementalPractitioners = practitionerNames.map((baseName, index) => {
 })
 
 const allDiagnoses = [...diagnosesRaw, ...supplementalDiagnoses]
+// Normalize expectedLos to Prisma.Decimal for all diagnoses
+const allDiagnosesNormalized = allDiagnoses.map(d => ({
+  ...d,
+  expectedLos: d.expectedLos != null ? new Prisma.Decimal(d.expectedLos) : null,
+}))
 const allProcedures = [
   ...proceduresRaw.map(p => ({ ...p, baseTariff: new Prisma.Decimal(p.baseTariff) })),
   ...supplementalProcedures
@@ -437,10 +444,10 @@ async function main() {
   console.log('🌱 Seeding Master Data Klinis...')
 
   let diagnosisCount = 0
-  for (const d of allDiagnoses) {
+  for (const d of allDiagnosesNormalized) {
     await prisma.masterDiagnosis.upsert({
       where: { code: d.code as string },
-      update: { name: d.name, description: d.description, tags: d.tags },
+      update: { name: d.name, description: d.description, tags: d.tags, expectedLos: d.expectedLos },
       create: d,
     })
     diagnosisCount++
@@ -479,6 +486,33 @@ async function main() {
     practitionerCount++
   }
   console.log(`  ✅ ${practitionerCount} Practitioner`)
+
+  // ─── System Settings (AI Thresholds) ────────────────────────────────────────
+  const defaultSettings = [
+    { key: 'threshold_procedure_overcharge_pct',  value: '20', label: 'Threshold Overcharge Tindakan (%)',   category: 'threshold_procedure' },
+    { key: 'threshold_procedure_undercharge_pct', value: '20', label: 'Threshold Undercharge Tindakan (%)',  category: 'threshold_procedure' },
+    { key: 'threshold_medication_overcharge_pct', value: '25', label: 'Threshold Overcharge Obat (%)',        category: 'threshold_medication' },
+    { key: 'threshold_medication_undercharge_pct',value: '25', label: 'Threshold Undercharge Obat (%)',       category: 'threshold_medication' },
+    { key: 'threshold_los_overcharge_pct',        value: '20', label: 'Threshold Overcharge LOS (%)',         category: 'threshold_los' },
+    { key: 'threshold_los_undercharge_pct',       value: '30', label: 'Threshold Undercharge LOS (%)',        category: 'threshold_los' },
+    // AI Provider Configuration
+    { key: 'ai_provider',      value: 'sumopod',              label: 'AI Provider Aktif',          category: 'ai_provider' },
+    { key: 'ai_sumopod_model', value: 'gpt-4o-mini',          label: 'Model SumoPod AI',           category: 'ai_provider' },
+    { key: 'ai_vercel_model',  value: 'openai/gpt-4o-mini',   label: 'Model Vercel AI Gateway',    category: 'ai_provider' },
+  ]
+
+
+  let settingsCount = 0
+  for (const s of defaultSettings) {
+    await prisma.systemSetting.upsert({
+      where: { key: s.key },
+      // Only insert defaults — do NOT overwrite if user has customised them
+      update: {},
+      create: s,
+    })
+    settingsCount++
+  }
+  console.log(`  ✅ ${settingsCount} System Settings`)
 
   console.log('\n✅ Seeding selesai!')
   console.log(`   Total: ${diagnosisCount + procedureCount + medicationCount + practitionerCount} records`)

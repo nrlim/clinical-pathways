@@ -1,4 +1,4 @@
-# Frontend Design Guidelines (Clinical Pathway)
+# Frontend Design Guidelines (SnapPath)
 
 > **Agent Directive**: Every UI element you create MUST pass the "premium feel" bar. Bland, generic, or default-browser-styled UIs are UNACCEPTABLE. Apply every section here before submitting.
 

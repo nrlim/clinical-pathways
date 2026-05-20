@@ -72,10 +72,10 @@
       "los_conformance": "tidak",
       "los_deviation_reason": "Seharusnya rawat jalan",
       "discharge_criteria": "",
-      "discharge_condition": "pulang_sembuh"
+      "discharge_condition": "Membaik"
     },
     "outcome": {
-      "outcome": "sembuh",
+      "outcome": "improved",
       "readmission_risk": "rendah",
       "clinical_notes": "Pasien batuk pilek ringan",
       "follow_up_plan": "Rawat jalan",
