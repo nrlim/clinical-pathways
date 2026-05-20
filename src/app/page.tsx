@@ -155,7 +155,7 @@ export default function ClinicalPathwayPage() {
         }
 
         setForm(data)
-        setStep(7)
+        setStep(STEPS.length)
       } catch (err) {
         alert('Gagal mengimpor file JSON: ' + (err instanceof Error ? err.message : 'Unknown error'))
       }

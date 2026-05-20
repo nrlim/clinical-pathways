@@ -497,9 +497,9 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
       {/* ── 1. Narrative Banner — pathway name + executive summary as prose ── */}
       <div style={{ background: 'linear-gradient(135deg, rgba(20,184,166,0.12) 0%, rgba(9,13,24,0.5) 100%)', border: '1px solid rgba(20,184,166,0.25)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-5)', alignItems: 'start' }}>
         <div>
-          <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-400)', fontWeight: 700, marginBottom: '8px' }}>{result.pathwayName}</div>
-          <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.6, margin: '0 0 12px' }}>{result.executiveSummary}</p>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{result.clinicalSynopsis}</p>
+          <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-primary-400)', fontWeight: 700, marginBottom: '8px' }}>{result.pathwayName || 'Pathway Tanpa Nama'}</div>
+          <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.6, margin: '0 0 12px' }}>{result.executiveSummary || 'Executive summary belum tersedia.'}</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{result.clinicalSynopsis || 'Clinical synopsis belum tersedia.'}</p>
         </div>
         <AiVisualSnapshot result={result} />
       </div>
@@ -509,16 +509,16 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
         {/* Assessment */}
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
           <SectionLabel icon="🩺" text="Assessment Kerja" />
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>{result.workingAssessment}</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>{result.workingAssessment || 'Belum tersedia.'}</p>
         </div>
 
         {/* Reasoning Validasi */}
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
           <SectionLabel icon="🔍" text="Reasoning Validasi" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <ReasonPill label="Tindakan" text={result.conformanceAnalysis.diagnosisProcedureFit} />
-            <ReasonPill label="Obat" text={result.conformanceAnalysis.diagnosisMedicationFit} />
-            <ReasonPill label="Rawat Inap" text={result.conformanceAnalysis.inpatientJustification} />
+            <ReasonPill label="Tindakan" text={result.conformanceAnalysis?.diagnosisProcedureFit || 'Belum dinilai'} />
+            <ReasonPill label="Obat" text={result.conformanceAnalysis?.diagnosisMedicationFit || 'Belum dinilai'} />
+            <ReasonPill label="Rawat Inap" text={result.conformanceAnalysis?.inpatientJustification || 'Belum dinilai'} />
           </div>
         </div>
       </div>
@@ -527,9 +527,11 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
         <SectionLabel icon="🎯" text="Tujuan Perawatan" />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {Array.isArray(result.careGoals) && result.careGoals.map((goal, i) => (
+          {Array.isArray(result.careGoals) && result.careGoals.length > 0 ? result.careGoals.map((goal, i) => (
             <span key={i} style={{ fontSize: '0.82rem', background: 'rgba(20,184,166,0.1)', color: 'var(--color-primary-600)', border: '1px solid rgba(20,184,166,0.2)', padding: '5px 14px', borderRadius: 'var(--radius-md)', fontWeight: 600, lineHeight: 1 }}>{goal}</span>
-          ))}
+          )) : (
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>Tidak ada data tujuan perawatan.</p>
+          )}
         </div>
       </div>
 
@@ -568,14 +570,16 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
           <SectionLabel icon="⚠️" text="Peta Risiko Klinis" />
           <div className="risk-lane">
-            {(result.riskStratification || []).map((risk, i) => (
+            {(result.riskStratification || []).length > 0 ? (result.riskStratification || []).map((risk, i) => (
               <div key={i} className={`risk-tile ${risk.level}`}>
                 <div className="risk-level">{risk.level}</div>
                 <strong>{risk.issue}</strong>
                 <p style={{ margin: 0, fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{risk.rationale}</p>
                 <span>Rencana: {risk.recommendedAction}</span>
               </div>
-            ))}
+            )) : (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: 'var(--space-6)' }}>Tidak terdeteksi risiko klinis spesifik.</p>
+            )}
           </div>
         </div>
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
@@ -599,9 +603,9 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
       {/* ── 7. Discharge Readiness ── */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
-          <div style={{ flexShrink: 0, padding: '8px 20px', borderRadius: 'var(--radius-md)', border: `1px solid ${result.dischargeReadiness.status === 'siap' ? 'var(--color-success-500)' : 'var(--color-warning-500)'}`, background: result.dischargeReadiness.status === 'siap' ? 'rgba(34,197,94,0.07)' : 'rgba(245,158,11,0.07)', textAlign: 'center' }}>
+          <div style={{ flexShrink: 0, padding: '8px 20px', borderRadius: 'var(--radius-md)', border: `1px solid ${result.dischargeReadiness?.status === 'siap' ? 'var(--color-success-500)' : 'var(--color-warning-500)'}`, background: result.dischargeReadiness?.status === 'siap' ? 'rgba(34,197,94,0.07)' : 'rgba(245,158,11,0.07)', textAlign: 'center' }}>
             <span style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.07em', marginBottom: '4px' }}>Status Pemulangan</span>
-            <span style={{ display: 'block', fontWeight: 800, color: result.dischargeReadiness.status === 'siap' ? 'var(--color-success-600)' : 'var(--color-warning-600)', textTransform: 'capitalize', fontSize: '1rem' }}>{result.dischargeReadiness.status.replaceAll('_', ' ')}</span>
+            <span style={{ display: 'block', fontWeight: 800, color: result.dischargeReadiness?.status === 'siap' ? 'var(--color-success-600)' : 'var(--color-warning-600)', textTransform: 'capitalize', fontSize: '1rem' }}>{result.dischargeReadiness?.status?.replaceAll('_', ' ') || 'Belum Dinilai'}</span>
           </div>
           <div>
             <SectionLabel icon="🏥" text="Discharge Readiness Assessment" />
@@ -609,15 +613,15 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-          <InfoBlock title="Kriteria Terpenuhi" items={result.dischargeReadiness.criteriaMet} accentColor="var(--color-success-500)" bgColor="rgba(34,197,94,0.05)" />
-          <InfoBlock title="Blocker Pemulangan" items={result.dischargeReadiness.blockers} accentColor="var(--color-danger-500)" bgColor="rgba(239,68,68,0.05)" />
+          <InfoBlock title="Kriteria Terpenuhi" items={result.dischargeReadiness?.criteriaMet || []} accentColor="var(--color-success-500)" bgColor="rgba(34,197,94,0.05)" />
+          <InfoBlock title="Blocker Pemulangan" items={result.dischargeReadiness?.blockers || []} accentColor="var(--color-danger-500)" bgColor="rgba(239,68,68,0.05)" />
           <div style={{ gridColumn: 'span 2', background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderLeft: '3px solid var(--color-primary-500)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
             <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700, color: 'var(--color-primary-500)', marginBottom: '6px' }}>Rencana Tindak Lanjut</div>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{result.dischargeReadiness.followUpPlan}</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{result.dischargeReadiness?.followUpPlan || '—'}</p>
           </div>
           <div style={{ gridColumn: 'span 2', background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderLeft: '3px solid var(--color-info-500)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
             <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700, color: 'var(--color-info-500)', marginBottom: '6px' }}>Edukasi Pasien</div>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{result.dischargeReadiness.patientEducation}</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{result.dischargeReadiness?.patientEducation || '—'}</p>
           </div>
         </div>
       </div>
@@ -626,17 +630,17 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
       <div>
         <SectionLabel icon="👥" text="Summary Multidisiplin" desc="Ringkasan klinis dirancang untuk masing-masing peran penanggung jawab pelayanan." />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--space-4)', marginTop: 'var(--space-3)' }}>
-          <AudienceCard label="Klinisi" accent="clinician" text={result.aiSummaryForClinician} />
-          <AudienceCard label="Coder / Klaim" accent="coder" text={result.aiSummaryForCoder} />
-          <AudienceCard label="Pasien" accent="patient" text={result.aiSummaryForPatient} />
+          <AudienceCard label="Klinisi" accent="clinician" text={result.aiSummaryForClinician || 'Belum tersedia.'} />
+          <AudienceCard label="Coder / Klaim" accent="coder" text={result.aiSummaryForCoder || 'Belum tersedia.'} />
+          <AudienceCard label="Pasien" accent="patient" text={result.aiSummaryForPatient || 'Belum tersedia.'} />
           <article className="audience-card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99,102,241,0.12)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800 }}>MD</div>
               <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>Mapping Katalog Standar</span>
             </div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}><span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Ref: </span>{result.masterDataMapping.patientReference}</p>
-            <AiList title="Resource disarankan" items={result.masterDataMapping.suggestedResources} />
-            <AiList title="Katalog standar kurang" items={result.masterDataMapping.missingMasterData} />
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}><span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Ref: </span>{result.masterDataMapping?.patientReference || '—'}</p>
+            <AiList title="Resource disarankan" items={result.masterDataMapping?.suggestedResources || []} />
+            <AiList title="Katalog standar kurang" items={result.masterDataMapping?.missingMasterData || []} />
           </article>
         </div>
       </div>
@@ -658,8 +662,8 @@ export function AiClinicalPathwayReport({ result }: { result: AiClinicalPathwayB
 
 function AiVisualSnapshot({ result }: { result: AiClinicalPathwayBrainOutput }) {
   const dashboard = result.validationDashboard
-  const highRiskCount = result.riskStratification.filter((risk) => risk.level === 'tinggi' || risk.level === 'kritis').length
-  const readinessLabel = result.dischargeReadiness.status.replaceAll('_', ' ')
+  const highRiskCount = result.riskStratification?.filter((risk) => risk.level === 'tinggi' || risk.level === 'kritis')?.length || 0
+  const readinessLabel = result.dischargeReadiness?.status?.replaceAll('_', ' ') || 'Belum Dinilai'
 
   return (
     <div className="visual-snapshot" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
@@ -681,12 +685,12 @@ function AiVisualSnapshot({ result }: { result: AiClinicalPathwayBrainOutput }) 
       <div className="snapshot-card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>Risiko Tinggi</span>
         <strong style={{ fontSize: '1.5rem', color: highRiskCount > 0 ? 'var(--color-danger-500)' : 'var(--text-primary)', fontWeight: 800, lineHeight: 1.2 }}>{highRiskCount}</strong>
-        <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Dari {result.riskStratification.length} risiko terdeteksi</p>
+        <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Dari {result.riskStratification?.length || 0} risiko terdeteksi</p>
       </div>
       <div className="snapshot-card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>Discharge Readiness</span>
         <strong style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 800, lineHeight: 1.2, textTransform: 'capitalize' }}>{readinessLabel}</strong>
-        <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{result.dischargeReadiness.blockers.length} blocker tersisa</p>
+        <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{result.dischargeReadiness?.blockers?.length || 0} blocker tersisa</p>
       </div>
     </div>
   )
@@ -735,10 +739,10 @@ export function AiValidationBoard({ result }: { result: AiClinicalPathwayBrainOu
     data_kurang: 'Data kurang',
   }
 
-  const procedures = dashboard.validatedItems.filter(item => item.type === 'procedure')
-  const medications = dashboard.validatedItems.filter(item => item.type === 'medication')
+  const procedures = dashboard?.validatedItems?.filter(item => item.type === 'procedure') || []
+  const medications = dashboard?.validatedItems?.filter(item => item.type === 'medication') || []
 
-  const renderItemCard = (item: typeof dashboard.validatedItems[0]) => (
+  const renderItemCard = (item: NonNullable<typeof dashboard>['validatedItems'][0]) => (
     <article key={`${item.type}-${item.id}`} className={`validation-item ${item.status}`} style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderTop: `3px solid ${item.status === 'sesuai' ? 'var(--color-success-500)' : item.status === 'tidak_sesuai' ? 'var(--color-danger-500)' : 'var(--color-warning-500)'}`, borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
       <div className="validation-item-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span className="validation-type" style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>{item.type === 'procedure' ? 'Tindakan' : 'Obat'}</span>
@@ -779,61 +783,7 @@ export function AiValidationBoard({ result }: { result: AiClinicalPathwayBrainOu
     </article>
   )
 
-  const renderDocCard = (doc: SupportingDocument) => {
-    const hasFile = doc.file_name && doc.file_name.trim().length > 0
-    let statusClass: 'sesuai' | 'tidak_sesuai' | 'perlu_review' = 'perlu_review'
-    let statusBadgeText = 'Belum Diunggah'
 
-    if (hasFile) {
-      if (doc.verification_status === 'valid') {
-        statusClass = 'sesuai'
-        statusBadgeText = 'Valid'
-      } else if (doc.verification_status === 'invalid') {
-        statusClass = 'tidak_sesuai'
-        statusBadgeText = 'Tidak Valid'
-      } else {
-        statusClass = 'sesuai'
-        statusBadgeText = 'Terunggah'
-      }
-    } else {
-      if (doc.required) {
-        statusClass = 'tidak_sesuai'
-        statusBadgeText = 'Hilang (-15)'
-      } else {
-        statusClass = 'perlu_review'
-        statusBadgeText = 'Opsional'
-      }
-    }
-
-    const borderTopColor = statusClass === 'sesuai'
-      ? 'var(--color-success-500)'
-      : statusClass === 'tidak_sesuai'
-        ? 'var(--color-danger-500)'
-        : 'var(--color-warning-500)'
-
-    return (
-      <article key={doc.id} className={`validation-item ${statusClass}`} style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)', borderTop: `3px solid ${borderTopColor}`, borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-        <div className="validation-item-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="validation-type" style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-muted)' }}>
-            {doc.required ? 'Berkas Wajib' : 'Berkas Opsional'}
-          </span>
-          <span className={`validation-status ${statusClass}`} style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}>
-            {statusBadgeText}
-          </span>
-        </div>
-        <h5 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          {doc.name}
-        </h5>
-        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>ID: {doc.id}</div>
-        
-        <div style={{ fontSize: '0.74rem', display: 'flex', flexDirection: 'column', gap: '4px', background: 'var(--bg-surface)', padding: '8px', borderRadius: 'var(--radius-sm)', marginTop: '4px' }}>
-          <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>File:</strong> {hasFile ? doc.file_name : '—'}</p>
-          {doc.file_size && <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>Ukuran:</strong> {doc.file_size}</p>}
-          <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>Hasil AI:</strong> {doc.verification_note || 'Belum dianalisis oleh AI'}</p>
-        </div>
-      </article>
-    )
-  }
 
   return (
     <div className="ai-report-section validation-board" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
@@ -870,19 +820,10 @@ export function AiValidationBoard({ result }: { result: AiClinicalPathwayBrainOu
       )}
 
       {medications.length > 0 && (
-        <div style={{ marginBottom: dashboard.documentVerification && dashboard.documentVerification.length > 0 ? 'var(--space-6)' : 0 }}>
+        <div>
           <h5 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>Evaluasi Obat / Medikasi</h5>
           <div className="validation-item-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
             {medications.map(renderItemCard)}
-          </div>
-        </div>
-      )}
-
-      {dashboard.documentVerification && dashboard.documentVerification.length > 0 && (
-        <div style={{ borderTop: '1px dashed var(--border-subtle)', paddingTop: 'var(--space-5)', marginTop: 'var(--space-5)' }}>
-          <h5 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>Evaluasi Kelengkapan &amp; Validitas Dokumen Pendukung</h5>
-          <div className="validation-item-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
-            {dashboard.documentVerification.map(renderDocCard)}
           </div>
         </div>
       )}

@@ -1138,7 +1138,7 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
   position: relative;
 }
 
@@ -1159,10 +1159,7 @@ body {
 .risk-tile.kritis::before { background: var(--color-danger-500); }
 .variance-node::before { background: var(--color-accent-400); }
 
-.risk-tile > *,
-.variance-node > * {
-  margin-left: var(--space-4);
-}
+
 
 .risk-level,
 .variance-area {
@@ -4498,6 +4495,7 @@ body {
 /* Customized range input styling matching teal theme */
 .settings-slider {
   -webkit-appearance: none;
+  appearance: none;
   width: 160px;
   height: 6px;
   border-radius: var(--radius-full);

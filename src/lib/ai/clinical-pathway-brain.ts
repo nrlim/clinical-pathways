@@ -11,12 +11,7 @@ export async function generateClinicalPathwayBrain(feed: AiSummaryFeed): Promise
   const startedAt = Date.now()
   const aiResult = await callAi({
     temperature: 0.1,
-    // maxTokens: batas output — model berhenti saat selesai, bukan saat mencapai limit.
-    // 8000 mencegah truncation JSON schema besar tanpa memperlambat response.
     maxTokens: 8000,
-    // budgetTokens: ini yang menentukan kecepatan thinking kimi-k2.6.
-    // 1500 cukup untuk reasoning kasus klinis standar (1–3 prosedur/obat).
-    // Jangan naikkan kecuali ada kasus sangat kompleks yang butuh reasoning panjang.
     budgetTokens: 1500,
     messages: [
       { role: 'system', content: buildSystemPrompt() },
@@ -61,7 +56,7 @@ function buildUserPrompt(feed: AiSummaryFeed): string {
 
   const actualLos = calculateActualLos(feed.encounter.admission_date, feed.encounter.discharge_date)
   const expectedLos = feed.masterDataValidation.primaryDiagnosis.expectedLos
-  const targetLos = Math.min(Math.max(actualLos || Number(feed.encounter.expected_los) || expectedLos || 3, 1), 7)
+  const targetLos = Math.min(Math.max(Number(feed.encounter.expected_los) || expectedLos || actualLos || 3, 1), 7)
 
   const compressedFeed = buildCompressedFeed(feed)
 
@@ -169,15 +164,33 @@ function calculateActualLos(admissionDate: string, dischargeDate: string): numbe
 async function parseBrainOutput(rawText: string, feed: AiSummaryFeed): Promise<AiClinicalPathwayBrainOutput> {
   const cleaned = cleanJsonCandidate(rawText)
 
-  let parsed: AiClinicalPathwayBrainOutput
+  let parsed: AiClinicalPathwayBrainOutput | any
   try {
-    parsed = JSON.parse(cleaned) as AiClinicalPathwayBrainOutput
+    parsed = JSON.parse(cleaned)
   } catch (firstError) {
     const repaired = await repairBrainJson(cleaned, firstError)
-    parsed = JSON.parse(cleanJsonCandidate(repaired)) as AiClinicalPathwayBrainOutput
+    parsed = JSON.parse(cleanJsonCandidate(repaired))
   }
 
-  return enforceMasterDataValidation(parsed, feed)
+  // --- WORKAROUND FOR AI NESTING HALLUCINATION ---
+  // Kadang AI lupa menutup bracket validationDashboard sehingga field-field
+  // yang seharusnya di root malah masuk ke dalam validationDashboard.
+  const rootFields = [
+    'dayByDayPlan', 'conformanceAnalysis', 'riskStratification', 'pathwayVariances',
+    'dischargeReadiness', 'masterDataMapping', 'aiSummaryForClinician', 'aiSummaryForCoder',
+    'aiSummaryForPatient', 'safetyNotes', 'dataQualityIssues'
+  ];
+
+  if (parsed.validationDashboard) {
+    for (const field of rootFields) {
+      if (parsed[field] === undefined && parsed.validationDashboard[field] !== undefined) {
+        parsed[field] = parsed.validationDashboard[field]
+        delete parsed.validationDashboard[field]
+      }
+    }
+  }
+
+  return enforceMasterDataValidation(parsed as AiClinicalPathwayBrainOutput, feed)
 }
 
 /**
@@ -259,7 +272,7 @@ function enforceMasterDataValidation(
   const enforcedDocuments = (feed.documents ?? []).map((doc) => {
     const aiDoc = aiDocsMap.get(doc.id)
     const hasFile = doc.file_name && doc.file_name.trim().length > 0
-    
+
     let verification_status: 'valid' | 'invalid' | 'unchecked' = 'unchecked'
     let verification_note = doc.verification_note || ''
 
