@@ -154,6 +154,11 @@ export default function ClinicalPathwayPage() {
           throw new Error('Format JSON tidak valid (missing patient/encounter).')
         }
 
+        // Pastikan documents array terisi meskipun JSON hasil import kosong
+        if (!data.documents || data.documents.length === 0) {
+          data.documents = [...INITIAL.documents]
+        }
+
         setForm(data)
         setStep(STEPS.length)
       } catch (err) {

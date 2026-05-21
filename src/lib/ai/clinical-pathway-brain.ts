@@ -1,4 +1,4 @@
-import type { AiSummaryFeed } from '@/types/clinical-pathway'
+import type { AiSummaryFeed, SupportingDocument } from '@/types/clinical-pathway'
 import type {
   AiClinicalPathwayBrainOutput,
   AiClinicalPathwayResponse,
@@ -291,7 +291,23 @@ function enforceMasterDataValidation(
   const docDeterministicIssues: string[] = []
   const docQuickFindings: string[] = []
 
-  const enforcedDocuments = (feed.documents ?? []).map((doc) => {
+  const defaultDocs: SupportingDocument[] = [
+    { id: 'ktp', name: 'KTP / NIK', description: 'Kartu Tanda Penduduk pasien untuk verifikasi identitas resmi', required: true, file_name: null, file_size: null, uploaded_at: null, status: 'missing' },
+    { id: 'bpjs', name: 'Kartu BPJS / Asuransi', description: 'Kartu kepesertaan jaminan kesehatan aktif', required: true, file_name: null, file_size: null, uploaded_at: null, status: 'missing' },
+    { id: 'rujukan', name: 'Surat Rujukan', description: 'Surat rujukan dari Faskes 1 (Puskesmas/Klinik) ke Rumah Sakit', required: false, file_name: null, file_size: null, uploaded_at: null, status: 'missing' },
+    { id: 'spri', name: 'Surat Perintah Rawat Inap (SPRI)', description: 'Surat perintah rawat inap dari poliklinik spesialis', required: true, file_name: null, file_size: null, uploaded_at: null, status: 'missing' },
+    { id: 'resume_medis', name: 'Resume Medis Terdahulu', description: 'Ringkasan riwayat medis pasien sebelumnya yang relevan', required: false, file_name: null, file_size: null, uploaded_at: null, status: 'missing' }
+  ]
+
+  const feedDocs = feed.documents ?? []
+  const sourceDocs = defaultDocs.map(defaultDoc => {
+    const found = feedDocs.find(d => d.id === defaultDoc.id)
+    return found ? found : defaultDoc
+  })
+  const extraDocs = feedDocs.filter(d => !defaultDocs.some(def => def.id === d.id))
+  const mergedDocs = [...sourceDocs, ...extraDocs]
+
+  const enforcedDocuments = mergedDocs.map((doc) => {
     const aiDoc = aiDocsMap.get(doc.id)
     const hasFile = doc.file_name && doc.file_name.trim().length > 0
 
