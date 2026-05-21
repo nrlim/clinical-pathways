@@ -759,7 +759,7 @@ export function AiValidationBoard({ result }: { result: AiClinicalPathwayBrainOu
 
       <div className="validation-price" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: '1px dashed var(--border-subtle)', borderBottom: '1px dashed var(--border-subtle)', padding: '4px 0', margin: '4px 0' }}>
         <strong style={{ fontSize: '0.9rem', color: 'var(--color-primary-500)' }}>{formatRupiah(item.totalCost)}</strong>
-        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{formatRupiah(item.unitCost)} × {item.quantity}</span>
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{formatRupiah(item.totalCost / (item.quantity || 1))} × {item.quantity}</span>
       </div>
       <div style={{ fontSize: '0.74rem', display: 'flex', flexDirection: 'column', gap: '4px', background: 'var(--bg-surface)', padding: '8px', borderRadius: 'var(--radius-sm)' }}>
         <p style={{ margin: 0 }}><strong style={{ color: 'var(--text-primary)' }}>Relasi:</strong> {item.diagnosisRelation}</p>
